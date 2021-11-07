@@ -1,0 +1,33 @@
+[package]
+authors = ["Christian Visintin"]
+categories = ["command-line-utilities"]
+description = "a terminal feed reader with a fancy ui"
+documentation = "https://docs.rs/tuifeed"
+edition = "2021"
+homepage = "https://veeso.github.io/tuifeed/"
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+keywords = ["rss", "feed", "feed-reader", "command-line-utility"]
+license = "MIT"
+name = "tuifeed"
+readme = "README.md"
+repository = "https://github.com/veeso/tuifeed"
+version = "0.1.0"
+
+[[bin]]
+name = "tuifeed"
+path = "src/main.rs"
+
+[dependencies]
+argh = "0.1.6"
+chrono = "0.4.19"
+dirs = "4.0.0"
+feed-rs = "^1.0.0"
+open = "2.0.1"
+serde = { version = "^1.0.0", features = [ "derive" ] }
+thiserror = "^1.0.0"
+toml = "0.5.8"
+ureq = { version = "2.3.0", features = [ "tls" ] }
+
+[dev-dependencies]
+pretty_assertions = "0.7.2"
+tempfile = "^3.1.0"

@@ -27,32 +27,21 @@
  */
 use super::{Feed, FeedError, FeedResult, Kiosk};
 use feed_rs::parser as feed_parser;
-use std::{collections::HashMap, io::Read};
+use std::io::Read;
 
 /// ## Client
 ///
 /// RSS client. Fetches its sources to retrieve all the required Feeds
-pub struct Client {
-    sources: HashMap<String, String>,
-}
+#[derive(Default)]
+pub struct Client;
 
 impl Client {
-    /// ### new
-    ///
-    /// Setup a new Feed client.
-    pub fn new(sources: HashMap<String, String>) -> Self {
-        Self { sources }
-    }
-
     /// ### fetch
     ///
-    /// Fetch feed with the current configuration
-    pub fn fetch(&self) -> FeedResult<Kiosk> {
-        let mut kiosk = Kiosk::default();
-        for (name, url) in self.sources.iter() {
-            kiosk.insert_feed(name.to_string(), self.fetch_source(url)?);
-        }
-        Ok(kiosk)
+    /// Fetch a source with the current configuration
+    pub fn fetch(&self, kiosk: &mut Kiosk, name: &str, url: &str) -> FeedResult<()> {
+        kiosk.insert_feed(name.to_string(), self.fetch_source(url)?);
+        Ok(())
     }
 
     // -- private
@@ -89,7 +78,7 @@ mod test {
 
     #[test]
     fn should_get_source() {
-        let client = Client::new(HashMap::new());
+        let client = Client::default();
         assert!(client
             .get_feed(&String::from(
                 "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
@@ -99,7 +88,7 @@ mod test {
 
     #[test]
     fn should_fail_getting_source() {
-        let client = Client::new(HashMap::new());
+        let client = Client::default();
         assert!(client
             .get_feed(&String::from(
                 "https://rss.nytimes.com/services/xml/rss/nyt/pippopippopippo.xml"
@@ -109,18 +98,23 @@ mod test {
 
     #[test]
     fn should_fetch_source() {
-        let mut sources = HashMap::new();
-        sources.insert(
-            String::from("nytimes"),
-            String::from("https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
-        );
-        sources.insert(
-            String::from("lefigaro"),
-            String::from("https://www.lefigaro.fr/rss/figaro_actualites.xml"),
-        );
-        let client = Client::new(sources);
-        let kiosk = client.fetch().ok().unwrap();
+        let client = Client::default();
+        let mut kiosk = Kiosk::default();
+        assert!(client
+            .fetch(
+                &mut kiosk,
+                "nytimes",
+                "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+            )
+            .is_ok());
         assert!(kiosk.get_feed("nytimes").is_some());
+        assert!(client
+            .fetch(
+                &mut kiosk,
+                "lefigaro",
+                "https://www.lefigaro.fr/rss/figaro_actualites.xml",
+            )
+            .is_ok());
         assert!(kiosk.get_feed("lefigaro").is_some());
     }
 }

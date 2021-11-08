@@ -93,32 +93,31 @@ fn main() {
         }
     };
     // TODO: remove and add UI here
-    let client = feed::Client::new(config.sources);
-    match client.fetch() {
-        Err(err) => {
-            eprintln!("Failed to get feed: {}", err);
+    let mut kiosk = feed::Kiosk::default();
+    let client = feed::Client::default();
+    for (name, url) in config.sources.iter() {
+        if let Err(err) = client.fetch(&mut kiosk, name, url) {
+            eprintln!("Could not fetch source '{}': {}", name, err);
             exit(1);
         }
-        Ok(kiosk) => {
-            let sources = kiosk.sources();
-            for source in sources.into_iter() {
-                let feed = kiosk.get_feed(source).unwrap();
-                println!("# {} ({})\n", source, feed.title().unwrap_or("?"));
-                for article in feed.articles() {
-                    if let Some(title) = article.title.as_ref() {
-                        println!("## {}\n", &title)
-                    }
-                    if !article.authors.is_empty() {
-                        print!("Written by: ");
-                        article.authors.iter().for_each(|x| print!("{} ", x));
-                        print!("\n\n");
-                    }
-                    println!("{}\n", article.summary);
-                    println!("Read article at <{}>\n", article.url);
-                }
-                println!("---\n");
+    }
+    let sources = kiosk.sources();
+    for source in sources.into_iter() {
+        let feed = kiosk.get_feed(source).unwrap();
+        println!("# {} ({})\n", source, feed.title().unwrap_or("?"));
+        for article in feed.articles() {
+            if let Some(title) = article.title.as_ref() {
+                println!("## {}\n", &title)
             }
+            if !article.authors.is_empty() {
+                print!("Written by: ");
+                article.authors.iter().for_each(|x| print!("{} ", x));
+                print!("\n\n");
+            }
+            println!("{}\n", article.summary);
+            println!("Read article at <{}>\n", article.url);
         }
+        println!("---\n");
     }
 }
 

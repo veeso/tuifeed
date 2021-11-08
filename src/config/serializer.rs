@@ -35,7 +35,7 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct SerializerError {
     kind: SerializerErrorKind,
-    msg: Option<String>,
+    msg: String,
 }
 
 /// ## SerializerErrorKind
@@ -43,12 +43,8 @@ pub struct SerializerError {
 /// Describes the kind of error for the serializer/deserializer
 #[derive(Error, Debug)]
 pub enum SerializerErrorKind {
-    #[error("Operation failed")]
-    Generic,
     #[error("IO error")]
     Io,
-    #[error("Serialization error")]
-    Serialization,
     #[error("Syntax error")]
     Syntax,
 }
@@ -56,42 +52,30 @@ pub enum SerializerErrorKind {
 impl SerializerError {
     /// ### new
     ///
-    /// Instantiate a new `SerializerError`
-    pub fn new(kind: SerializerErrorKind) -> SerializerError {
-        SerializerError { kind, msg: None }
-    }
-
-    /// ### new_ex
-    ///
     /// Instantiates a new `SerializerError` with description message
-    pub fn new_ex(kind: SerializerErrorKind, msg: String) -> SerializerError {
-        SerializerError {
-            kind,
-            msg: Some(msg),
-        }
+    pub fn new(kind: SerializerErrorKind, msg: String) -> SerializerError {
+        SerializerError { kind, msg }
     }
 }
 
 impl std::fmt::Display for SerializerError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match &self.msg {
-            Some(msg) => write!(f, "{} ({})", self.kind, msg),
-            None => write!(f, "{}", self.kind),
-        }
+        write!(f, "{} ({})", self.kind, self.msg)
     }
 }
 
 /// ### deserialize
 ///
 /// Read data from readable and deserialize its content as TOML
-pub fn deserialize<S>(mut readable: Box<dyn Read>) -> Result<S, SerializerError>
+pub fn deserialize<R, S>(mut readable: R) -> Result<S, SerializerError>
 where
+    R: Read,
     S: DeserializeOwned + Sized + std::fmt::Debug,
 {
     // Read file content
     let mut data: String = String::new();
     if let Err(err) = readable.read_to_string(&mut data) {
-        return Err(SerializerError::new_ex(
+        return Err(SerializerError::new(
             SerializerErrorKind::Io,
             err.to_string(),
         ));
@@ -99,7 +83,7 @@ where
     // Deserialize
     match toml::de::from_str(data.as_str()) {
         Ok(deserialized) => Ok(deserialized),
-        Err(err) => Err(SerializerError::new_ex(
+        Err(err) => Err(SerializerError::new(
             SerializerErrorKind::Syntax,
             err.to_string(),
         )),
@@ -118,31 +102,14 @@ mod test {
 
     #[test]
     fn should_create_serialization_errors() {
-        let error: SerializerError = SerializerError::new(SerializerErrorKind::Syntax);
-        assert!(error.msg.is_none());
-        assert_eq!(format!("{}", error), String::from("Syntax error"));
         let error: SerializerError =
-            SerializerError::new_ex(SerializerErrorKind::Syntax, String::from("bad syntax"));
-        assert!(error.msg.is_some());
+            SerializerError::new(SerializerErrorKind::Syntax, String::from("aho"));
+        assert_eq!(format!("{}", error), String::from("Syntax error (aho)"));
+        let error: SerializerError =
+            SerializerError::new(SerializerErrorKind::Syntax, String::from("bad syntax"));
         assert_eq!(
             format!("{}", error),
             String::from("Syntax error (bad syntax)")
-        );
-        // Fmt
-        assert_eq!(
-            format!("{}", SerializerError::new(SerializerErrorKind::Generic)),
-            String::from("Operation failed")
-        );
-        assert_eq!(
-            format!("{}", SerializerError::new(SerializerErrorKind::Io)),
-            String::from("IO error")
-        );
-        assert_eq!(
-            format!(
-                "{}",
-                SerializerError::new(SerializerErrorKind::Serialization)
-            ),
-            String::from("Serialization error")
         );
     }
 
@@ -166,7 +133,7 @@ mod test {
     fn should_fail_config_deserialization() {
         let config = create_bad_toml_config();
         let reader = File::open(config.path()).expect("Could not open TOML file");
-        assert!(deserialize::<Config>(Box::new(reader)).is_err());
+        assert!(deserialize::<File, Config>(reader).is_err());
     }
 
     fn create_good_toml_config() -> tempfile::NamedTempFile {

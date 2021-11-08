@@ -28,9 +28,11 @@
  */
 // -- modules
 mod client;
+mod result;
 
 // -- export
-pub use client::{Client, FeedError, FeedResult};
+pub use client::Client;
+pub use result::{FeedError, FeedResult};
 // -- deps
 use chrono::{DateTime, Local};
 use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
@@ -64,7 +66,7 @@ pub struct Article {
     pub title: Option<String>,
     pub authors: Vec<String>,
     pub summary: String,
-    pub url: Option<String>,
+    pub url: String,
     pub date: Option<DateTime<Local>>,
 }
 
@@ -83,6 +85,13 @@ impl Kiosk {
     /// Get feed from kiosk
     pub fn get_feed(&self, source: &str) -> Option<&Feed> {
         self.feed.get(source)
+    }
+
+    /// ### sources
+    ///
+    /// Get sources in kiosk
+    pub fn sources(&self) -> Vec<&String> {
+        self.feed.keys().into_iter().collect()
     }
 }
 
@@ -108,7 +117,7 @@ impl From<RssFeed> for Feed {
     fn from(feed: RssFeed) -> Self {
         Self {
             title: feed.title.map(|x| x.content),
-            articles: feed.entries.into_iter().map(|x| Article::from(x)).collect(),
+            articles: feed.entries.into_iter().map(Article::from).collect(),
         }
     }
 }
@@ -119,8 +128,12 @@ impl From<RssEntry> for Article {
             title: entry.title.map(|x| x.content),
             authors: entry.authors.into_iter().map(|x| x.name).collect(),
             summary: entry.summary.map(|x| x.content).unwrap_or_default(),
-            url: entry.content.map(|x| x.src.map(|x| x.href)).flatten(),
-            date: entry.updated.map(|x| DateTime::<Local>::from(x)),
+            url: entry
+                .content
+                .map(|x| x.src.map(|x| x.href))
+                .flatten()
+                .unwrap_or(entry.id),
+            date: entry.updated.map(DateTime::<Local>::from),
         }
     }
 }
@@ -167,6 +180,19 @@ mod test {
     }
 
     #[test]
+    fn should_get_sources_from_kiosk() {
+        let mut kiosk = Kiosk::default();
+        kiosk.insert_feed(
+            "lefigaro",
+            Feed {
+                title: None,
+                articles: Vec::default(),
+            },
+        );
+        assert_eq!(kiosk.sources(), vec![&String::from("lefigaro")]);
+    }
+
+    #[test]
     fn should_get_feed_attributes() {
         let feed = Feed {
             title: Some(String::from("foo")),
@@ -184,7 +210,7 @@ mod test {
         assert_eq!(article.date, None);
         assert_eq!(article.summary, String::new());
         assert_eq!(article.title, None);
-        assert_eq!(article.url, None);
+        assert_eq!(article.url, String::new());
     }
 
     #[test]

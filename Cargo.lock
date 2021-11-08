@@ -623,6 +623,7 @@ dependencies = [
  "chrono",
  "dirs",
  "feed-rs",
+ "lazy_static",
  "open",
  "pretty_assertions",
  "serde",

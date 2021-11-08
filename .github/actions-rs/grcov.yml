@@ -7,4 +7,4 @@ ignore:
   - "C:/*"
   - "../*"
   - src/main.rs
-  - src/lib.rs
+  - src/helpers/open.rs

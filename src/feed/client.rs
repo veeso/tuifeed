@@ -25,47 +25,102 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::Kiosk;
-
-use thiserror::Error;
-
-/// ## FeedResult
-///
-/// A result returned by the feed client
-pub type FeedResult<T> = Result<T, FeedError>;
-
-/// ## FeedError
-///
-/// Describes a feed error
-#[derive(Debug, Error)]
-pub enum FeedError {
-    #[error("Parse error: {0}")]
-    Parse(String),
-    #[error("HTTP request failed: {0}")]
-    Http(String),
-}
+use super::{Feed, FeedError, FeedResult, Kiosk};
+use feed_rs::parser as feed_parser;
+use std::{collections::HashMap, io::Read};
 
 /// ## Client
 ///
 /// RSS client. Fetches its sources to retrieve all the required Feeds
 pub struct Client {
-    sources: Vec<String>,
+    sources: HashMap<String, String>,
 }
 
 impl Client {
     /// ### new
     ///
     /// Setup a new Feed client.
-    pub fn new(sources: &[String]) -> Self {
-        Self {
-            sources: sources.to_vec(),
-        }
+    pub fn new(sources: HashMap<String, String>) -> Self {
+        Self { sources }
     }
 
     /// ### fetch
     ///
     /// Fetch feed with the current configuration
     pub fn fetch(&self) -> FeedResult<Kiosk> {
-        todo!()
+        let mut kiosk = Kiosk::default();
+        for (name, url) in self.sources.iter() {
+            kiosk.insert_feed(name.to_string(), self.fetch_source(url)?);
+        }
+        Ok(kiosk)
+    }
+
+    // -- private
+
+    /// ### fetch_source
+    ///
+    /// Fetch a single source from remote
+    fn fetch_source(&self, source: &str) -> FeedResult<Feed> {
+        let body = self.get_feed(source)?;
+        self.parse_feed(body)
+    }
+
+    /// ### get_feed
+    ///
+    /// Get feed via HTTP GET request
+    fn get_feed(&self, source: &str) -> FeedResult<impl Read + Send> {
+        Ok(ureq::get(source).call()?.into_reader())
+    }
+
+    /// ### parse_feed
+    ///
+    /// Parse feed from HTTP response
+    fn parse_feed<R: Read>(&self, response: R) -> FeedResult<Feed> {
+        feed_parser::parse(response)
+            .map(Feed::from)
+            .map_err(FeedError::from)
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_get_source() {
+        let client = Client::new(HashMap::new());
+        assert!(client
+            .get_feed(&String::from(
+                "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+            ))
+            .is_ok());
+    }
+
+    #[test]
+    fn should_fail_getting_source() {
+        let client = Client::new(HashMap::new());
+        assert!(client
+            .get_feed(&String::from(
+                "https://rss.nytimes.com/services/xml/rss/nyt/pippopippopippo.xml"
+            ))
+            .is_err());
+    }
+
+    #[test]
+    fn should_fetch_source() {
+        let mut sources = HashMap::new();
+        sources.insert(
+            String::from("nytimes"),
+            String::from("https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+        );
+        sources.insert(
+            String::from("lefigaro"),
+            String::from("https://www.lefigaro.fr/rss/figaro_actualites.xml"),
+        );
+        let client = Client::new(sources);
+        let kiosk = client.fetch().ok().unwrap();
+        assert!(kiosk.get_feed("nytimes").is_some());
+        assert!(kiosk.get_feed("lefigaro").is_some());
     }
 }

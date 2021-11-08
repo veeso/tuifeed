@@ -14,6 +14,6 @@ jobs:
       - name: Build
         run: cargo build
       - name: Run tests
-        run: cargo test --verbose --lib
+        run: cargo test --no-fail-fast -- --test-threads 1
       - name: Clippy
         run: cargo clippy -- -Dwarnings

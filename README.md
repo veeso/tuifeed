@@ -70,6 +70,7 @@
   - [About tuifeed 📰](#about-tuifeed-)
   - [Get started 🏁](#get-started-)
     - [Configure your news feed](#configure-your-news-feed)
+  - [Keybindings ⌨️](#keybindings-️)
   - [Support the developer ☕](#support-the-developer-)
   - [Contributing and issues 🤝🏻](#contributing-and-issues-)
   - [Changelog ⏳](#changelog-)
@@ -97,7 +98,40 @@ cargo install tuifeed
 
 ### Configure your news feed
 
-TODO: complete
+In order to start using tuifeed, the first thing you need to do is to configure the feeds you want to read from.
+
+To open the configuration file you can run
+
+```sh
+tuifeed -c
+```
+
+this will open the configuration file in your favourite editor.
+
+> ❗ If you don't have a GUI you can edit your configuration file at:
+>
+> - `~/.config/tuifeed/config.toml` on Linux
+> - `/Users/$USER/Library/Application\ Support/tuifeed/config.toml` on MacOS
+
+then you can add new sources as follows:
+
+```toml
+[sources]
+Il_Post_Mondo = "https://www.ilpost.it/mondo/feed/"
+Il_Post_Italia = "https://www.ilpost.it/italia/feed/"
+New_York_Times = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+```
+
+so for each feed you want to read from, you must put an entry with a key, which identifies the **Name** of the source as it'll be displayed in the UI associated to the URL of the feed.
+  
+> 🪄 If you want to use special characters in toml you can quote the key name:
+> `"Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"`
+
+Once you're done with configuration, save, close and enjoy tuifeed 😄
+
+## Keybindings ⌨️
+
+TBD
 
 ---
 

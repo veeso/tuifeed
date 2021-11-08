@@ -1,6 +1,6 @@
-//! # Paths
+//! # Path
 //!
-//! System paths helpers
+//! System path helpers
 
 /**
  * MIT License

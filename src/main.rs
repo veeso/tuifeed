@@ -44,7 +44,7 @@ use config::serializer as config_serializer;
 use config::Config;
 use helpers::file as file_helpers;
 use helpers::open as open_helpers;
-use helpers::paths as paths_helpers;
+use helpers::path as path_helpers;
 
 #[derive(FromArgs)]
 #[argh(description = "
@@ -142,11 +142,11 @@ fn edit_config_file() -> Result<(), String> {
 ///
 /// Initialize configuration
 fn init_config() -> Result<Config, String> {
-    let config_dir = paths_helpers::init_config_dir()?;
+    let config_dir = path_helpers::init_config_dir()?;
     if config_dir.is_none() {
         return Ok(Config::default());
     }
-    let config_file = paths_helpers::get_config_file(config_dir.unwrap().as_path())?;
+    let config_file = path_helpers::get_config_file(config_dir.unwrap().as_path())?;
     // Parse configuration
     let config_file =
         file_helpers::open_file_read(config_file.as_path()).map_err(|e| e.to_string())?;
@@ -157,11 +157,11 @@ fn init_config() -> Result<Config, String> {
 ///
 /// Get configuration file path
 fn get_config_file() -> Option<PathBuf> {
-    let config_dir = match paths_helpers::init_config_dir() {
+    let config_dir = match path_helpers::init_config_dir() {
         Ok(Some(p)) => p,
         _ => return None,
     };
-    match paths_helpers::get_config_file(config_dir.as_path()) {
+    match path_helpers::get_config_file(config_dir.as_path()) {
         Ok(p) => Some(p),
         _ => None,
     }

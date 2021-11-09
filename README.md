@@ -1,9 +1,5 @@
 # tuifeed
 
-<p align="center">
-  <img src="/docs/images/tuifeed.svg" width="256" height="256" />
-</p>
-
 <p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
@@ -57,11 +53,6 @@
       src="https://coveralls.io/repos/github/veeso/tuifeed/badge.svg"
       alt="Coveralls"
   /></a>
-  <a href="https://docs.rs/tuifeed"
-    ><img
-      src="https://docs.rs/tuifeed/badge.svg"
-      alt="Docs"
-  /></a>
 </p>
 
 ---
@@ -72,6 +63,7 @@
     - [Configure your news feed](#configure-your-news-feed)
   - [Keybindings ⌨️](#keybindings-️)
   - [Support the developer ☕](#support-the-developer-)
+  - [Powered by 💪](#powered-by-)
   - [Contributing and issues 🤝🏻](#contributing-and-issues-)
   - [Changelog ⏳](#changelog-)
   - [License 📃](#license-)
@@ -143,6 +135,16 @@ You can make a donation with one of these platforms:
 
 [![Buy-me-a-coffee](https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/veeso)
 [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/chrisintin)
+
+---
+
+## Powered by 💪
+
+- [crossterm](https://github.com/crossterm-rs/crossterm)
+- [feed-rs](https://github.com/feed-rs/feed-rs)
+- [tui-realm](https://github.com/veeso/tui-realm)
+- [tui-rs](https://github.com/fdehau/tui-rs)
+- [ureq](https://github.com/algesten/ureq)
 
 ---
 

@@ -28,6 +28,7 @@ const TUIFEED_AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 // -- libs
 #[macro_use]
 extern crate lazy_static;
+extern crate tuirealm;
 
 use argh::FromArgs;
 use std::env;
@@ -38,6 +39,7 @@ use std::process::exit;
 mod config;
 mod feed;
 mod helpers;
+mod ui;
 
 // -- internal
 use config::serializer as config_serializer;
@@ -45,6 +47,7 @@ use config::Config;
 use helpers::file as file_helpers;
 use helpers::open as open_helpers;
 use helpers::path as path_helpers;
+use ui::Ui;
 
 #[derive(FromArgs)]
 #[argh(description = "
@@ -92,33 +95,8 @@ fn main() {
             exit(255);
         }
     };
-    // TODO: remove and add UI here
-    let mut kiosk = feed::Kiosk::default();
-    let client = feed::Client::default();
-    for (name, url) in config.sources.iter() {
-        if let Err(err) = client.fetch(&mut kiosk, name, url) {
-            eprintln!("Could not fetch source '{}': {}", name, err);
-            exit(1);
-        }
-    }
-    let sources = kiosk.sources();
-    for source in sources.into_iter() {
-        let feed = kiosk.get_feed(source).unwrap();
-        println!("# {} ({})\n", source, feed.title().unwrap_or("?"));
-        for article in feed.articles() {
-            if let Some(title) = article.title.as_ref() {
-                println!("## {}\n", &title)
-            }
-            if !article.authors.is_empty() {
-                print!("Written by: ");
-                article.authors.iter().for_each(|x| print!("{} ", x));
-                print!("\n\n");
-            }
-            println!("{}\n", article.summary);
-            println!("Read article at <{}>\n", article.url);
-        }
-        println!("---\n");
-    }
+    let mut ui = Ui::new(config, args.ticks);
+    ui.run();
 }
 
 /// ### edit_config_file

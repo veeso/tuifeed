@@ -54,7 +54,6 @@ pub struct Kiosk {
 /// Contains, for a feed source, the list of articles fetched from remote
 #[derive(Debug)]
 pub struct Feed {
-    title: Option<String>,
     articles: Vec<Article>,
 }
 
@@ -96,13 +95,6 @@ impl Kiosk {
 }
 
 impl Feed {
-    /// ### title
-    ///
-    /// Get a reference to title
-    pub fn title(&self) -> Option<&str> {
-        self.title.as_deref()
-    }
-
     /// ### articles
     ///
     /// Get an iterator over articles
@@ -116,7 +108,6 @@ impl Feed {
 impl From<RssFeed> for Feed {
     fn from(feed: RssFeed) -> Self {
         Self {
-            title: feed.title.map(|x| x.content),
             articles: feed.entries.into_iter().map(Article::from).collect(),
         }
     }
@@ -158,7 +149,6 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             Feed {
-                title: None,
                 articles: Vec::default(),
             },
         );
@@ -171,7 +161,6 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             Feed {
-                title: None,
                 articles: Vec::default(),
             },
         );
@@ -185,7 +174,6 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             Feed {
-                title: None,
                 articles: Vec::default(),
             },
         );
@@ -195,10 +183,8 @@ mod test {
     #[test]
     fn should_get_feed_attributes() {
         let feed = Feed {
-            title: Some(String::from("foo")),
             articles: Vec::default(),
         };
-        assert_eq!(feed.title().unwrap(), "foo");
         assert!(feed.articles.is_empty());
     }
 
@@ -236,7 +222,6 @@ mod test {
             entries: vec![RssEntry::default(), RssEntry::default()],
         };
         let feed = Feed::from(feed);
-        assert_eq!(feed.title.is_none(), true);
         assert_eq!(feed.articles.len(), 2);
     }
 }

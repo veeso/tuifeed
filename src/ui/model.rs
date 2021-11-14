@@ -29,13 +29,13 @@ use super::components::{
     ArticleAuthors, ArticleDate, ArticleLink, ArticleList, ArticleSummary, ArticleTitle, FeedList,
     QuitPopup,
 };
-use super::{Id, Msg, Task};
+use super::lib::FeedState;
+use super::{Id, Kiosk, Msg, Task};
 
-use crate::feed::{Article, Client, Feed, FeedResult, Kiosk};
+use crate::feed::{Article, Feed};
 use crate::helpers::open as open_helpers;
 use crate::helpers::strings as str_helpers;
 use crate::helpers::ui as ui_helpers;
-use crate::Config;
 
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
@@ -43,7 +43,6 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{Application, AttrValue, Attribute, NoUserEvent, State, StateValue, Update, View};
 
 pub struct Model {
-    config: Config,
     kiosk: Kiosk,
     quit: bool,
     redraw: bool,
@@ -55,9 +54,8 @@ impl Model {
     /// ### new
     ///
     /// Instantiates a new `Model`
-    pub fn new(config: Config, terminal: TerminalBridge) -> Self {
+    pub fn new(terminal: TerminalBridge) -> Self {
         Self {
-            config,
             kiosk: Kiosk::default(),
             quit: false,
             redraw: true,
@@ -112,16 +110,11 @@ impl Model {
         &self.kiosk
     }
 
-    /// ### fetch_sources
+    /// ### update_source
     ///
-    /// Fetch all sources in the current configuration
-    pub fn fetch_sources(&mut self) -> FeedResult<()> {
-        let client = Client::default();
-        self.kiosk = Kiosk::default();
-        for (name, url) in self.config.sources.iter() {
-            client.fetch(&mut self.kiosk, name, url)?;
-        }
-        Ok(())
+    /// Update source in kiosk
+    pub fn update_source(&mut self, name: String, state: FeedState) {
+        self.kiosk.insert_feed(name, state);
     }
 
     /// ### sorted_sources
@@ -208,10 +201,6 @@ impl Model {
                         let popup = ui_helpers::draw_area_in(f.size(), 50, 10);
                         f.render_widget(Clear, popup);
                         app.view(&Id::ErrorPopup, f, popup);
-                    } else if app.mounted(&Id::WaitPopup) {
-                        let popup = ui_helpers::draw_area_in(f.size(), 40, 10);
-                        f.render_widget(Clear, popup);
-                        app.view(&Id::WaitPopup, f, popup);
                     }
                 })
                 .is_ok());

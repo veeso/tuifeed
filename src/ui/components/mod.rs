@@ -33,7 +33,7 @@ mod popups;
 
 pub use article::{ArticleAuthors, ArticleDate, ArticleLink, ArticleSummary, ArticleTitle};
 pub use lists::{ArticleList, FeedList};
-pub use popups::{ErrorPopup, QuitPopup, WaitPopup};
+pub use popups::{ErrorPopup, QuitPopup};
 
 use tui_realm_stdlib::Phantom;
 use tuirealm::{

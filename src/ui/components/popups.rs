@@ -121,29 +121,3 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
         }
     }
 }
-
-#[derive(MockComponent)]
-pub struct WaitPopup {
-    component: Paragraph,
-}
-
-impl WaitPopup {
-    pub fn new(msg: Option<&str>) -> Self {
-        Self {
-            component: Paragraph::default()
-                .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::LightYellow),
-                )
-                .alignment(Alignment::Center)
-                .text(vec![TextSpan::from(msg.unwrap_or("Please, wait…"))].as_slice()),
-        }
-    }
-}
-
-impl Component<Msg, NoUserEvent> for WaitPopup {
-    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Msg> {
-        None
-    }
-}

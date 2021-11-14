@@ -29,7 +29,7 @@ mod components;
 mod lib;
 mod model;
 
-use components::{ErrorPopup, GlobalListener, WaitPopup};
+use components::{ErrorPopup, GlobalListener};
 use model::Model;
 
 use crate::config::Config;
@@ -58,7 +58,6 @@ pub enum Id {
     ArticleLink,
     QuitPopup,
     ErrorPopup,
-    WaitPopup,
 }
 
 /// ## Msg
@@ -89,6 +88,8 @@ pub enum Task {
 }
 
 pub struct Ui {
+    client: FeedClient,
+    config: Config,
     model: Model,
     app: Application<Id, Msg, NoUserEvent>,
 }
@@ -98,9 +99,14 @@ impl Ui {
     ///
     /// Instantiates a new Ui
     pub fn new(config: Config, tick: u64) -> Self {
-        let model = Model::new(config, Self::init_terminal());
+        let model = Model::new(Self::init_terminal());
         let app = Self::init_application(&model, tick);
-        Self { model, app }
+        Self {
+            config,
+            client: FeedClient::default(),
+            model,
+            app,
+        }
     }
 
     /// ### run
@@ -115,7 +121,11 @@ impl Ui {
             if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
                 self.mount_error_popup(format!("Application error: {}", err));
             }
+            // Poll fetched sources
+            self.poll_fetched_sources();
+            // Run tasks
             self.run_tasks();
+            // View
             self.model.view(&mut self.app);
         }
         self.model.finalize_terminal();
@@ -129,7 +139,7 @@ impl Ui {
     fn run_tasks(&mut self) {
         for task in self.model.get_tasks().into_iter() {
             match task {
-                Task::FetchSources => self.fetch_sources(),
+                Task::FetchSources => self.fetch_sources(), // TODO: must accept one argument
                 Task::ShowError(err) => self.mount_error_popup(err),
             }
         }
@@ -137,20 +147,12 @@ impl Ui {
 
     /// ### fetch_sources
     ///
-    /// Fetch sources and update Ui
+    /// Fetch all sources and update Ui
     fn fetch_sources(&mut self) {
-        self.mount_wait_popup(Some("Downloading feed. Please, wait…"));
-        // Force redraw
-        self.model.force_redraw();
-        // Render once
-        self.model.view(&mut self.app);
-        // Force redraw for next cycle
-        self.model.force_redraw();
         // Fetch sources
-        let result = self.model.fetch_sources();
-        // Umount wait popup
-        assert!(self.app.umount(&Id::WaitPopup).is_ok());
-        assert!(self.app.active(&Id::FeedList).is_ok());
+        for (name, uri) in self.config.sources.iter() {
+            self.fetch_source(name.as_str(), uri.as_str());
+        }
         // If result is error, let's show the error message
         if let Err(err) = result {
             self.mount_error_popup(format!("Could not fetch feed: {}", err));
@@ -200,6 +202,21 @@ impl Ui {
         }
     }
 
+    /// ### fetch_source
+    ///
+    /// Start a worker to fetch sources
+    fn fetch_source(&mut self, name: &str, uri: &str) {
+        self.client.fetch(name, uri);
+    }
+
+    /// ### poll_fetched_sources
+    ///
+    /// Get result for all fetched sources
+    fn poll_fetched_sources(&mut self) {
+        // TODO: impl
+        todo!()
+    }
+
     /// ### mount_error_popup
     ///
     /// Mount error and give focus to it
@@ -213,19 +230,6 @@ impl Ui {
             )
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
-    }
-
-    /// ### mount_wait_popup
-    ///
-    /// Mount wait popup
-    fn mount_wait_popup(&mut self, msg: Option<&str>) {
-        // Remount wait
-        assert!(self
-            .app
-            .remount(Id::WaitPopup, Box::new(WaitPopup::new(msg)), vec![])
-            .is_ok());
-        // Active wait
-        assert!(self.app.active(&Id::WaitPopup).is_ok());
     }
 
     /// ### init_terminal

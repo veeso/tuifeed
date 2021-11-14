@@ -26,83 +26,89 @@
  * SOFTWARE.
  */
 use crate::feed::{Client, Feed, FeedResult};
-use std::sync::{mpsc, Arc, RwLock};
+use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FeedClient {
-    /// Indicates whether the worker should keep running
-    running: Arc<RwLock<bool>>,
-    /// Receiver. The worker send a message with the result of the fetch process
-    recv: mpsc::Receiver<(String, FeedResult<Feed>)>,
-    /// Sender. Used to request to the worker to fetch a source (SourceName, Uri)
-    send: mpsc::Sender<(String, String)>,
     /// Join handle
-    thread: Option<JoinHandle<()>>,
+    workers: Vec<WorkerThread>,
 }
 
 impl FeedClient {
-    /// ### start
-    ///
-    /// Start feed client
-    pub fn start() -> Self {
-        let (source_send, source_recv) = mpsc::channel();
-        let (feed_send, feed_recv) = mpsc::channel();
-        let running = Arc::new(RwLock::new(true));
-        let running_t = Arc::clone(&running);
-        // Start thread
-        let thread = thread::spawn(move || {
-            Worker::new(source_recv, feed_send, running_t).run();
-        });
-        Self {
-            running,
-            recv: feed_recv,
-            send: source_send,
-            thread: Some(thread),
-        }
-    }
-
-    /// ### stop
-    ///
-    /// Stop event listener
-    pub fn stop(&mut self) {
-        {
-            // NOTE: keep these brackets to drop running after block
-            if let Ok(running) = self.running.write() {
-                *running = false;
-            }
-        }
-        // Join thread
-        let _ = self.thread.take().map(|x| x.join());
-    }
-
     /// ### fetch
     ///
     /// Fetch source.
     /// Panics if fails to send request
-    pub fn fetch(&self, name: &str, uri: &str) {
-        if let Err(err) = self.send.send((name.to_string(), uri.to_string())) {
-            panic!("Runtime error (fetch): {}", err);
-        }
+    pub fn fetch(&mut self, name: &str, uri: &str) {
+        self.workers.push(WorkerThread::start(name, uri));
     }
 
     /// ### poll
     ///
     /// Poll receiver for fetch results.
     /// Panics if fails to poll
-    pub fn poll(&self) -> Option<(String, FeedResult<Feed>)> {
-        match self.recv.recv_timeout(Duration::from_millis(10)) {
-            Ok(msg) => Some(msg),
-            Err(mpsc::RecvTimeoutError::Timeout) => None,
-            Err(err) => panic!("Runtime error (poll): {}", err),
+    pub fn poll(&mut self) -> Option<(String, FeedResult<Feed>)> {
+        // FIXME: use drain_filter when stable
+        let mut i = 0;
+        while i < self.workers.len() {
+            // if worker at `i` is joinable, join and return
+            if self.workers[i].is_joinable() {
+                let mut worker = self.workers.remove(i);
+                // Join and return
+                return Some(worker.join());
+            }
+            i += 1;
         }
+        None
     }
 }
 
 impl Drop for FeedClient {
     fn drop(&mut self) {
-        let _ = self.stop();
+        // Wait for all
+        for worker in self.workers.into_iter() {
+            let _ = worker.join();
+        }
+    }
+}
+
+// -- worker thread
+
+/// ## WorkerThread
+///
+/// Thread holder for worker
+#[derive(Debug)]
+struct WorkerThread(Arc<RwLock<bool>>, JoinHandle<(String, FeedResult<Feed>)>);
+
+impl WorkerThread {
+    /// ### start
+    ///
+    /// Start a new worker thread
+    pub fn start(name: &str, uri: &str) -> Self {
+        let completed = Arc::new(RwLock::new(false));
+        let completed_t = Arc::clone(&completed);
+        let thread =
+            thread::spawn(|| Worker::new(completed_t, name.to_string(), uri.to_string()).run());
+        Self(completed, thread)
+    }
+
+    /// ### is_joinable
+    ///
+    /// Returns whether thread is joinable
+    pub fn is_joinable(&self) -> bool {
+        if let Ok(lock) = self.0.read() {
+            return *lock;
+        }
+        true
+    }
+
+    /// ### join
+    ///
+    /// Join thread and consume worker.
+    /// Returns thread product
+    pub fn join(self) -> (String, FeedResult<Feed>) {
+        self.1.join().ok().unwrap()
     }
 }
 
@@ -112,75 +118,45 @@ impl Drop for FeedClient {
 ///
 /// Worker thread which fetches async the feed sources
 pub struct Worker {
-    client: Client,
-    running: Arc<RwLock<bool>>,
-    recv: mpsc::Receiver<(String, String)>,
-    send: mpsc::Sender<(String, FeedResult<Feed>)>,
+    completed: Arc<RwLock<bool>>,
+    name: String,
+    uri: String,
 }
 
 impl Worker {
-    /// ### new
-    ///
-    /// Instantiates a new `Worker`+
-    pub fn new(
-        recv: mpsc::Receiver<(String, String)>,
-        send: mpsc::Sender<(String, FeedResult<Feed>)>,
-        running: Arc<RwLock<bool>>,
-    ) -> Self {
+    pub fn new(completed: Arc<RwLock<bool>>, name: String, uri: String) -> Self {
         Self {
-            client: Client::default(),
-            running,
-            recv,
-            send,
+            completed,
+            name,
+            uri,
         }
     }
 
     /// ### run
     ///
-    /// Main loop for Worker
-    pub fn run(&mut self) {
-        loop {
-            if !self.running() {
-                break;
-            }
-        }
+    /// Run function for worker
+    pub fn run(&mut self) -> (String, FeedResult<Feed>) {
+        let fetch_result = Client::default().fetch(self.uri.as_str());
+        // Set running to false
+        self.stop();
+        // Return to handle
+        (self.name, Client::default().fetch(self.uri.as_str()))
     }
 
-    // -- private
-
-    /// ### process_fetch_requests
-    ///
-    /// Process incoming fetch requests.
-    /// Panics if fails to poll
-    fn process_fetch_requests(&mut self) {
-        loop {
-            // Get source to fetch
-            let (name, uri) = match self.recv.recv_timeout(Duration::from_millis(10)) {
-                Ok((name, uri)) => (name, uri),
-                Err(mpsc::RecvTimeoutError::Timeout) => break,
-                Err(err) => panic!("Runtime error (process_fetch_requests): {}", err),
-            };
-            // Fetch source
-            self.fetch_source(name, uri);
+    fn stop(&mut self) {
+        // NOTE: keep these brackets to drop running after block
+        if let Ok(completed) = self.completed.write() {
+            *completed = true;
         }
     }
+}
 
-    /// fetch_source
-    ///
-    /// Fetch source
-    fn fetch_source(&mut self, name: String, uri: String) {
-        if let Err(err) = self.send.send((name, self.client.fetch(uri.as_str()))) {
-            panic!("Runtime error (fetch_source): {}", err);
-        }
-    }
+#[cfg(test)]
+mod test {
 
-    /// ### running
-    ///
-    /// Returns whether should keep running
-    fn running(&self) -> bool {
-        if let Ok(lock) = self.running.read() {
-            return *lock;
-        }
-        true
-    }
+    use super::*;
+
+    use pretty_assertions::assert_eq;
+
+    // TODO: impl tests
 }

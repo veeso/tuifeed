@@ -25,11 +25,13 @@ dirs = "4.0.0"
 feed-rs = "^1.0.0"
 lazy_static = "^1.0.0"
 open = "2.0.1"
+regex = "1.5.4"
 serde = { version = "^1.0.0", features = [ "derive" ] }
 thiserror = "^1.0.0"
 toml = "0.5.8"
-tuirealm = { git = "https://github.com/veeso/tui-realm", branch = "new-api" }
-tui-realm-stdlib = { git = "https://github.com/veeso/tui-realm-stdlib", branch = "1.0.0" }
+tuirealm = "^1.0.0"
+tui-realm-stdlib = "^1.0.0"
+unicode-truncate = "^0.2.0"
 ureq = { version = "2.3.0", features = [ "tls" ] }
 
 [dev-dependencies]

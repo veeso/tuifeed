@@ -29,22 +29,25 @@ use super::Msg;
 use crate::helpers::fmt as fmt_helpers;
 
 use chrono::{DateTime, Local};
-use tui_realm_stdlib::{Label, Textarea};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan};
+use tui_realm_stdlib::{Label, Paragraph};
+use tuirealm::props::{
+    Alignment, BorderSides, BorderType, Borders, Color, TextModifiers, TextSpan,
+};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent};
 
 #[derive(MockComponent)]
 pub struct ArticleTitle {
-    component: Label,
+    component: Paragraph,
 }
 
 impl ArticleTitle {
     pub fn new(title: &str) -> Self {
         Self {
-            component: Label::default()
+            component: Paragraph::default()
+                .borders(Borders::default().sides(BorderSides::empty()))
                 .foreground(Color::LightYellow)
                 .modifiers(TextModifiers::BOLD)
-                .text(title),
+                .text(&[TextSpan::from(title)]),
         }
     }
 }
@@ -65,7 +68,7 @@ impl ArticleDate {
         Self {
             component: Label::default()
                 .foreground(Color::LightGreen)
-                .modifiers(TextModifiers::BOLD)
+                .modifiers(TextModifiers::BOLD | TextModifiers::ITALIC)
                 .text(
                     datetime
                         .map(|x| fmt_helpers::format_datetime(x, "%A %d %B %Y, %H:%M"))
@@ -91,7 +94,7 @@ impl ArticleAuthors {
         Self {
             component: Label::default()
                 .foreground(Color::LightGreen)
-                .modifiers(TextModifiers::BOLD)
+                .modifiers(TextModifiers::BOLD | TextModifiers::ITALIC)
                 .text(authors.join(", ")),
         }
     }
@@ -124,13 +127,13 @@ impl Component<Msg, NoUserEvent> for ArticleLink {
 
 #[derive(MockComponent)]
 pub struct ArticleSummary {
-    component: Textarea,
+    component: Paragraph,
 }
 
 impl ArticleSummary {
     pub fn new(summary: &str) -> Self {
         Self {
-            component: Textarea::default()
+            component: Paragraph::default()
                 .borders(
                     Borders::default()
                         .color(Color::LightCyan)
@@ -138,7 +141,7 @@ impl ArticleSummary {
                 )
                 .foreground(Color::Reset)
                 .title("Summary", Alignment::Left)
-                .text_rows(
+                .text(
                     summary
                         .split('\n')
                         .map(TextSpan::from)

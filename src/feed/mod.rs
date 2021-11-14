@@ -30,6 +30,8 @@
 mod client;
 mod result;
 
+use crate::helpers::strings as str_helpers;
+
 // -- export
 pub use client::Client;
 pub use result::{FeedError, FeedResult};
@@ -118,7 +120,10 @@ impl From<RssEntry> for Article {
         Self {
             title: entry.title.map(|x| x.content),
             authors: entry.authors.into_iter().map(|x| x.name).collect(),
-            summary: entry.summary.map(|x| x.content).unwrap_or_default(),
+            summary: entry
+                .summary
+                .map(|x| str_helpers::strip_html_tags(x.content.as_str()))
+                .unwrap_or_default(),
             url: entry
                 .content
                 .map(|x| x.src.map(|x| x.href))

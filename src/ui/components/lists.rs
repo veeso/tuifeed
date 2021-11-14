@@ -55,7 +55,7 @@ impl FeedList {
                 )
                 .rows(
                     sources
-                        .into_iter()
+                        .iter()
                         .map(|x| vec![TextSpan::from(x.as_str())])
                         .collect(),
                 ),
@@ -105,7 +105,7 @@ impl ArticleList {
     pub fn new(articles: &[String]) -> Self {
         Self {
             component: List::default()
-                .highlighted_color(Color::LightGreen)
+                .highlighted_color(Color::LightCyan)
                 .highlighted_str("➤ ")
                 .rewind(true)
                 .scroll(true)
@@ -113,12 +113,12 @@ impl ArticleList {
                 .title("Articles", Alignment::Center)
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(Color::LightCyan)
                         .modifiers(BorderType::Rounded),
                 )
                 .rows(
                     articles
-                        .into_iter()
+                        .iter()
                         .map(|x| vec![TextSpan::from(x.as_str())])
                         .collect(),
                 ),

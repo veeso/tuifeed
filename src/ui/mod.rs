@@ -71,9 +71,19 @@ pub enum Msg {
     CloseQuitPopup,
     FeedChanged(usize),
     FeedListBlur,
+    FetchSources,
     OpenArticle,
     ShowQuitPopup,
     None,
+}
+
+/// ## Task
+///
+/// A task requested by the model in the Update routine, to be performed by the ui
+#[derive(Debug, Clone, PartialEq)]
+pub enum Task {
+    FetchSources,
+    ShowError(String),
 }
 
 pub struct Ui {
@@ -91,8 +101,45 @@ impl Ui {
         Self { model, app }
     }
 
+    /// ### run
+    ///
+    /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
+        // Fetch sources once
+        self.fetch_sources();
+        // Main loop
+        while !self.model.quit() {
+            if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
+                self.mount_error_popup(format!("Application error: {}", err));
+            }
+            self.run_tasks();
+            self.model.view(&mut self.app);
+        }
+        self.model.finalize_terminal();
+    }
+
+    // -- private
+
+    /// ### run_tasks
+    ///
+    /// Run model tasks
+    fn run_tasks(&mut self) {
+        for task in self.model.get_tasks().into_iter() {
+            match task {
+                Task::FetchSources => self.fetch_sources(),
+                Task::ShowError(err) => self.mount_error_popup(err),
+            }
+        }
+    }
+
+    /// ### fetch_sources
+    ///
+    /// Fetch sources and update Ui
+    fn fetch_sources(&mut self) {
+        self.mount_wait_popup(Some("Downloading feed. Please, wait…"));
+        // Force redraw
+        self.model.force_redraw();
         // Render once
         self.model.view(&mut self.app);
         // Force redraw for next cycle
@@ -104,7 +151,7 @@ impl Ui {
         assert!(self.app.active(&Id::FeedList).is_ok());
         // If result is error, let's show the error message
         if let Err(err) = result {
-            self.show_error(format!("Could not fetch feed: {}", err));
+            self.mount_error_popup(format!("Could not fetch feed: {}", err));
         } else {
             assert!(self
                 .app
@@ -116,7 +163,10 @@ impl Ui {
                     .app
                     .remount(
                         Id::ArticleList,
-                        Box::new(Model::get_article_list(feed)),
+                        Box::new(Model::get_article_list(
+                            feed,
+                            self.model.max_article_name_len()
+                        )),
                         vec![]
                     )
                     .is_ok());
@@ -146,21 +196,12 @@ impl Ui {
                 }
             }
         }
-        while !self.model.quit() {
-            if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
-                self.show_error(format!("Application error: {}", err));
-            }
-            self.model.view(&mut self.app);
-        }
-        self.model.finalize_terminal();
     }
 
-    // -- private
-
-    /// ### show_error
+    /// ### mount_error_popup
     ///
     /// Mount error and give focus to it
-    fn show_error(&mut self, err: impl ToString) {
+    fn mount_error_popup(&mut self, err: impl ToString) {
         assert!(self
             .app
             .remount(
@@ -170,6 +211,19 @@ impl Ui {
             )
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
+    }
+
+    /// ### mount_wait_popup
+    ///
+    /// Mount wait popup
+    fn mount_wait_popup(&mut self, msg: Option<&str>) {
+        // Remount wait
+        assert!(self
+            .app
+            .remount(Id::WaitPopup, Box::new(WaitPopup::new(msg)), vec![])
+            .is_ok());
+        // Active wait
+        assert!(self.app.active(&Id::WaitPopup).is_ok());
     }
 
     /// ### init_terminal
@@ -201,22 +255,35 @@ impl Ui {
             )
             .is_ok());
         assert!(app
-            .mount(Id::WaitPopup, Box::new(WaitPopup::default()), vec![])
-            .is_ok());
-        assert!(app
             .mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::default()),
-                vec![Sub::new(
-                    SubEventClause::Keyboard(KeyEvent {
-                        code: Key::Esc,
-                        modifiers: KeyModifiers::NONE
-                    }),
-                    SubClause::Always
-                )]
+                Self::subs(),
             )
             .is_ok());
-        assert!(app.active(&Id::WaitPopup).is_ok());
+        assert!(app.active(&Id::FeedList).is_ok());
         app
+    }
+
+    /// ### subs
+    ///
+    /// Get application subscriptions
+    fn subs() -> Vec<Sub<NoUserEvent>> {
+        vec![
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Esc,
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('r'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+        ]
     }
 }

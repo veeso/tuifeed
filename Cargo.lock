@@ -795,7 +795,8 @@ dependencies = [
 [[package]]
 name = "tui-realm-stdlib"
 version = "1.0.0"
-source = "git+https://github.com/veeso/tui-realm-stdlib?branch=1.0.0#0d4b4ef30e6f9b5b7dc7362b397795fee149a280"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1655e08ce23aafc50cf6ef016e36c0e7fc0bac8d741572a3fa7be386e074fa19"
 dependencies = [
  "textwrap",
  "tuirealm",
@@ -814,19 +815,22 @@ dependencies = [
  "lazy_static",
  "open",
  "pretty_assertions",
+ "regex",
  "serde",
  "tempfile",
  "thiserror",
  "toml",
  "tui-realm-stdlib",
  "tuirealm",
+ "unicode-truncate",
  "ureq",
 ]
 
 [[package]]
 name = "tuirealm"
 version = "1.0.0"
-source = "git+https://github.com/veeso/tui-realm?branch=new-api#328d668f87e7e25e0548d53636c04d01f9a4a82b"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83c940677c05752fd223073cdc93feb12738264bb3db9b6a644dc99992478d8e"
 dependencies = [
  "bitflags",
  "crossterm",
@@ -840,7 +844,8 @@ dependencies = [
 [[package]]
 name = "tuirealm_derive"
 version = "1.0.0"
-source = "git+https://github.com/veeso/tuirealm_derive#c008f6833dcf88a9484b0f5eba48878a1209db7d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0adcdaf59881626555558eae08f8a53003c8a1961723b4d7a10c51599abbc81"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -876,6 +881,15 @@ name = "unicode-segmentation"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8895849a949e7845e06bd6dc1aa51731a103c42707010a5b591c0038fb73385b"
+
+[[package]]
+name = "unicode-truncate"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a04be5ca5f7a4a7270ffea82bc41c59b87c611ed04f20e77c338e8d3c2348e42"
+dependencies = [
+ "unicode-width",
+]
 
 [[package]]
 name = "unicode-width"

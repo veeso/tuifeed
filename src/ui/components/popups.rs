@@ -127,13 +127,17 @@ pub struct WaitPopup {
     component: Paragraph,
 }
 
-impl Default for WaitPopup {
-    fn default() -> Self {
+impl WaitPopup {
+    pub fn new(msg: Option<&str>) -> Self {
         Self {
             component: Paragraph::default()
-                .borders(Borders::default().modifiers(BorderType::Rounded))
+                .borders(
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(Color::LightYellow),
+                )
                 .alignment(Alignment::Center)
-                .text(vec![TextSpan::from("Please, wait…")].as_slice()),
+                .text(vec![TextSpan::from(msg.unwrap_or("Please, wait…"))].as_slice()),
         }
     }
 }

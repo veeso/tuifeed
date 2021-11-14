@@ -48,10 +48,13 @@ pub struct GlobalListener {
 
 impl Component<Msg, NoUserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        if matches!(ev, Event::Keyboard(KeyEvent { code: Key::Esc, .. })) {
-            Some(Msg::ShowQuitPopup)
-        } else {
-            None
+        match ev {
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => Some(Msg::ShowQuitPopup),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('r'),
+                ..
+            }) => Some(Msg::FetchSources),
+            _ => None,
         }
     }
 }

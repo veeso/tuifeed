@@ -26,13 +26,14 @@
  * SOFTWARE.
  */
 use super::components::{
-    ArticleAuthors, ArticleDate, ArticleLink, ArticleList, ArticleSummary, ArticleTitle,
-    ErrorPopup, FeedList, QuitPopup,
+    ArticleAuthors, ArticleDate, ArticleLink, ArticleList, ArticleSummary, ArticleTitle, FeedList,
+    QuitPopup,
 };
-use super::{Id, Msg};
+use super::{Id, Msg, Task};
 
 use crate::feed::{Article, Client, Feed, FeedResult, Kiosk};
 use crate::helpers::open as open_helpers;
+use crate::helpers::strings as str_helpers;
 use crate::helpers::ui as ui_helpers;
 use crate::Config;
 
@@ -46,6 +47,7 @@ pub struct Model {
     kiosk: Kiosk,
     quit: bool,
     redraw: bool,
+    tasks: Vec<Task>,
     terminal: TerminalBridge,
 }
 
@@ -59,6 +61,7 @@ impl Model {
             kiosk: Kiosk::default(),
             quit: false,
             redraw: true,
+            tasks: Vec::new(),
             terminal,
         }
     }
@@ -79,6 +82,13 @@ impl Model {
         let _ = self.terminal.disable_raw_mode();
         let _ = self.terminal.leave_alternate_screen();
         let _ = self.terminal.clear_screen();
+    }
+
+    /// ### max_article_name_len
+    ///
+    /// Get max article name length for the article list
+    pub fn max_article_name_len(&self) -> usize {
+        (self.terminal_width() / 2) - 9 // 50 % - margin - 1
     }
 
     /// ### force_redraw
@@ -112,6 +122,24 @@ impl Model {
             client.fetch(&mut self.kiosk, name, url)?;
         }
         Ok(())
+    }
+
+    /// ### sorted_sources
+    ///
+    /// Get sorted sources from kiosk
+    pub fn sorted_sources(&self) -> Vec<&String> {
+        let mut sources = self.kiosk().sources();
+        sources.sort();
+        sources
+    }
+
+    /// ### get_tasks
+    ///
+    /// Get tasks requested by the model
+    pub fn get_tasks(&mut self) -> Vec<Task> {
+        let tasks = self.tasks.clone();
+        self.tasks.clear();
+        tasks
     }
 
     /// ### view
@@ -152,9 +180,9 @@ impl Model {
                         .direction(Direction::Vertical)
                         .constraints(
                             [
-                                Constraint::Length(1), // Title
+                                Constraint::Length(3), // Title
                                 Constraint::Length(1), // Authors + date
-                                Constraint::Min(8),    // Summary
+                                Constraint::Min(6),    // Summary
                                 Constraint::Length(1), // Link
                             ]
                             .as_ref(),
@@ -181,7 +209,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         app.view(&Id::ErrorPopup, f, popup);
                     } else if app.mounted(&Id::WaitPopup) {
-                        let popup = ui_helpers::draw_area_in(f.size(), 50, 10);
+                        let popup = ui_helpers::draw_area_in(f.size(), 40, 10);
                         f.render_widget(Clear, popup);
                         app.view(&Id::WaitPopup, f, popup);
                     }
@@ -214,10 +242,15 @@ impl Model {
     /// ### update_article_list
     ///
     /// Update the current article list
-    pub fn get_article_list(feed: &Feed) -> ArticleList {
+    pub fn get_article_list(feed: &Feed, max_title_len: usize) -> ArticleList {
         let articles: Vec<String> = feed
             .articles()
-            .map(|x| x.title.clone().unwrap_or_default())
+            .map(|x| {
+                x.title
+                    .as_ref()
+                    .map(|x| str_helpers::elide_string_at(x.as_str(), max_title_len))
+            })
+            .flatten()
             .collect();
         ArticleList::new(articles.as_slice())
     }
@@ -236,16 +269,6 @@ impl Model {
         FeedList::new(self.sorted_sources().as_slice())
     }
 
-    /// ### view_error
-    ///
-    /// Mount error into view
-    fn mount_error<S: AsRef<str>>(&self, view: &mut View<Id, Msg, NoUserEvent>, err: S) {
-        assert!(view
-            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)))
-            .is_ok());
-        assert!(view.active(&Id::ErrorPopup).is_ok());
-    }
-
     /// ### view_quit
     ///
     /// Mount quit popup
@@ -256,13 +279,40 @@ impl Model {
         assert!(view.active(&Id::QuitPopup).is_ok());
     }
 
-    /// ### sorted_sources
+    /// ### terminal_width
     ///
-    /// Get sorted sources from kiosk
-    pub fn sorted_sources(&self) -> Vec<&String> {
-        let mut sources = self.kiosk().sources();
-        sources.sort();
-        sources
+    /// Get terminal width. If it fails to collect width, returns 65535
+    fn terminal_width(&self) -> usize {
+        self.terminal
+            .raw()
+            .size()
+            .map(|x| x.width as usize)
+            .unwrap_or(u16::MAX as usize)
+    }
+
+    /// ### task
+    ///
+    /// Schedule a new task for the Ui
+    fn task(&mut self, task: Task) {
+        self.tasks.push(task);
+    }
+
+    /// ### update_article
+    ///
+    /// Update article into view by index
+    fn update_article(&self, view: &mut View<Id, Msg, NoUserEvent>, article: usize) {
+        if let State::One(StateValue::Usize(feed)) = view.state(&Id::FeedList).ok().unwrap() {
+            let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
+            let feed = self.kiosk.get_feed(feed.as_str()).unwrap();
+            if let Some(article) = feed.articles().nth(article) {
+                let (authors, date, link, summary, title) = Self::get_article_view(article);
+                assert!(view.remount(Id::ArticleAuthors, Box::new(authors)).is_ok());
+                assert!(view.remount(Id::ArticleDate, Box::new(date)).is_ok());
+                assert!(view.remount(Id::ArticleLink, Box::new(link)).is_ok());
+                assert!(view.remount(Id::ArticleSummary, Box::new(summary)).is_ok());
+                assert!(view.remount(Id::ArticleTitle, Box::new(title)).is_ok());
+            }
+        }
     }
 }
 
@@ -271,18 +321,7 @@ impl Update<Id, Msg, NoUserEvent> for Model {
         self.redraw = true;
         match msg.unwrap_or(Msg::None) {
             Msg::ArticleChanged(article) => {
-                if let State::One(StateValue::Usize(feed)) = view.state(&Id::FeedList).ok().unwrap()
-                {
-                    let feed = self.sorted_sources().get(feed).unwrap().clone();
-                    let feed = self.kiosk.get_feed(feed.as_str()).unwrap();
-                    let article = feed.articles().nth(article).unwrap();
-                    let (authors, date, link, summary, title) = Self::get_article_view(article);
-                    assert!(view.remount(Id::ArticleAuthors, Box::new(authors)).is_ok());
-                    assert!(view.remount(Id::ArticleDate, Box::new(date)).is_ok());
-                    assert!(view.remount(Id::ArticleLink, Box::new(link)).is_ok());
-                    assert!(view.remount(Id::ArticleSummary, Box::new(summary)).is_ok());
-                    assert!(view.remount(Id::ArticleTitle, Box::new(title)).is_ok());
-                }
+                self.update_article(view, article);
             }
             Msg::ArticleListBlur => {
                 assert!(view.active(&Id::FeedList).is_ok());
@@ -291,19 +330,24 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                 self.quit = true;
             }
             Msg::CloseErrorPopup => {
-                assert!(view.umount(&Id::ErrorPopup).is_ok());
+                let _ = view.umount(&Id::ErrorPopup);
             }
             Msg::CloseQuitPopup => {
-                assert!(view.umount(&Id::QuitPopup).is_ok());
+                let _ = view.umount(&Id::QuitPopup);
             }
             Msg::FeedChanged(feed) => {
-                let feed = self.sorted_sources().get(feed).unwrap().clone();
+                let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
                 let feed = self.kiosk.get_feed(feed.as_str()).unwrap();
-                let articles = Self::get_article_list(feed);
+                let articles = Self::get_article_list(feed, self.max_article_name_len());
                 assert!(view.remount(Id::ArticleList, Box::new(articles)).is_ok());
+                // Then load the first article of feed
+                self.update_article(view, 0);
             }
             Msg::FeedListBlur => {
                 assert!(view.active(&Id::ArticleList).is_ok());
+            }
+            Msg::FetchSources => {
+                self.task(Task::FetchSources);
             }
             Msg::None => {}
             Msg::OpenArticle => {
@@ -311,7 +355,7 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                     view.query(&Id::ArticleLink, Attribute::Text)
                 {
                     if let Err(err) = open_helpers::open_link(url.as_str()) {
-                        self.mount_error(view, err);
+                        self.task(Task::ShowError(err));
                     }
                 }
             }

@@ -25,6 +25,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+mod feed_list;
+
 use super::Msg;
 
 use tui_realm_stdlib::List;
@@ -35,13 +37,13 @@ use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct FeedList {
-    component: List,
+    component: feed_list::FeedList,
 }
 
 impl FeedList {
     pub fn new(sources: &[&String]) -> Self {
         Self {
-            component: List::default()
+            component: feed_list::FeedList::default()
                 .highlighted_color(Color::LightBlue)
                 .highlighted_str("➤ ")
                 .rewind(true)

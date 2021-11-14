@@ -38,23 +38,12 @@ pub use result::{FeedError, FeedResult};
 // -- deps
 use chrono::{DateTime, Local};
 use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
-use std::collections::HashMap;
 use std::slice::Iter;
-
-/// ## Kiosk
-///
-/// Describes the current feed holder.
-/// It contains different sources, each one with its own feed
-#[derive(Debug, Default)]
-pub struct Kiosk {
-    /// Association between Source name and Feed
-    feed: HashMap<String, Feed>,
-}
 
 /// ## Feed
 ///
 /// Contains, for a feed source, the list of articles fetched from remote
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Feed {
     articles: Vec<Article>,
 }
@@ -62,38 +51,13 @@ pub struct Feed {
 /// ## Article
 ///
 /// identifies a single article in the feed
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Article {
     pub title: Option<String>,
     pub authors: Vec<String>,
     pub summary: String,
     pub url: String,
     pub date: Option<DateTime<Local>>,
-}
-
-// -- impl
-
-impl Kiosk {
-    /// ### insert_feed
-    ///
-    /// Insert a feed into kiosk
-    pub fn insert_feed<S: AsRef<str>>(&mut self, source: S, feed: Feed) {
-        self.feed.insert(source.as_ref().to_string(), feed);
-    }
-
-    /// ### get_feed
-    ///
-    /// Get feed from kiosk
-    pub fn get_feed(&self, source: &str) -> Option<&Feed> {
-        self.feed.get(source)
-    }
-
-    /// ### sources
-    ///
-    /// Get sources in kiosk
-    pub fn sources(&self) -> Vec<&String> {
-        self.feed.keys().into_iter().collect()
-    }
 }
 
 impl Feed {
@@ -141,49 +105,6 @@ mod test {
 
     use feed_rs::model::FeedType;
     use pretty_assertions::assert_eq;
-
-    #[test]
-    fn should_create_kiosk() {
-        let kiosk = Kiosk::default();
-        assert!(kiosk.feed.is_empty());
-    }
-
-    #[test]
-    fn should_insert_feed_into_kiosk() {
-        let mut kiosk = Kiosk::default();
-        kiosk.insert_feed(
-            "lefigaro",
-            Feed {
-                articles: Vec::default(),
-            },
-        );
-        assert_eq!(kiosk.feed.len(), 1);
-    }
-
-    #[test]
-    fn should_get_feed_from_kiosk() {
-        let mut kiosk = Kiosk::default();
-        kiosk.insert_feed(
-            "lefigaro",
-            Feed {
-                articles: Vec::default(),
-            },
-        );
-        assert!(kiosk.get_feed("lefigaro").is_some());
-        assert!(kiosk.get_feed("foobar").is_none());
-    }
-
-    #[test]
-    fn should_get_sources_from_kiosk() {
-        let mut kiosk = Kiosk::default();
-        kiosk.insert_feed(
-            "lefigaro",
-            Feed {
-                articles: Vec::default(),
-            },
-        );
-        assert_eq!(kiosk.sources(), vec![&String::from("lefigaro")]);
-    }
 
     #[test]
     fn should_get_feed_attributes() {

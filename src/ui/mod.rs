@@ -26,12 +26,14 @@
  * SOFTWARE.
  */
 mod components;
+mod lib;
 mod model;
 
 use components::{ErrorPopup, GlobalListener, WaitPopup};
 use model::Model;
 
 use crate::config::Config;
+use lib::{FeedClient, Kiosk};
 
 use std::time::Duration;
 use tuirealm::{

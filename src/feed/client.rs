@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{Feed, FeedError, FeedResult, Kiosk};
+use super::{Feed, FeedError, FeedResult};
 use feed_rs::parser as feed_parser;
 use std::io::Read;
 
@@ -36,23 +36,15 @@ use std::io::Read;
 pub struct Client;
 
 impl Client {
-    /// ### fetch
-    ///
-    /// Fetch a source with the current configuration
-    pub fn fetch(&self, kiosk: &mut Kiosk, name: &str, url: &str) -> FeedResult<()> {
-        kiosk.insert_feed(name.to_string(), self.fetch_source(url)?);
-        Ok(())
-    }
-
-    // -- private
-
     /// ### fetch_source
     ///
     /// Fetch a single source from remote
-    fn fetch_source(&self, source: &str) -> FeedResult<Feed> {
+    pub fn fetch(&self, source: &str) -> FeedResult<Feed> {
         let body = self.get_feed(source)?;
         self.parse_feed(body)
     }
+
+    // -- private
 
     /// ### get_feed
     ///
@@ -99,22 +91,11 @@ mod test {
     #[test]
     fn should_fetch_source() {
         let client = Client::default();
-        let mut kiosk = Kiosk::default();
         assert!(client
-            .fetch(
-                &mut kiosk,
-                "nytimes",
-                "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-            )
+            .fetch("https://rss.nytimes.com/services/xml/rss/nyt/World.xml",)
             .is_ok());
-        assert!(kiosk.get_feed("nytimes").is_some());
         assert!(client
-            .fetch(
-                &mut kiosk,
-                "lefigaro",
-                "https://www.lefigaro.fr/rss/figaro_actualites.xml",
-            )
+            .fetch("https://www.lefigaro.fr/rss/figaro_actualites.xml",)
             .is_ok());
-        assert!(kiosk.get_feed("lefigaro").is_some());
     }
 }

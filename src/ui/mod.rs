@@ -71,6 +71,7 @@ pub enum Id {
 /// Messages produced by components
 #[derive(Debug, PartialEq)]
 pub enum Msg {
+    ArticleBlur,
     ArticleChanged(usize),
     ArticleListBlur,
     CloseApp,
@@ -80,6 +81,7 @@ pub enum Msg {
     FeedListBlur,
     FetchSource,
     FetchAllSources,
+    GoReadArticle,
     OpenArticle,
     ShowQuitPopup,
     None,

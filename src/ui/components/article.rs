@@ -27,9 +27,12 @@
  */
 use super::Msg;
 use crate::helpers::fmt as fmt_helpers;
+use crate::helpers::strings as str_helpers;
 
 use chrono::{DateTime, Local};
-use tui_realm_stdlib::{Label, Paragraph};
+use tui_realm_stdlib::{Label, Paragraph, Textarea};
+use tuirealm::command::{Cmd, Direction, Position};
+use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{
     Alignment, BorderSides, BorderType, Borders, Color, TextModifiers, TextSpan,
 };
@@ -127,13 +130,13 @@ impl Component<Msg, NoUserEvent> for ArticleLink {
 
 #[derive(MockComponent)]
 pub struct ArticleSummary {
-    component: Paragraph,
+    component: Textarea,
 }
 
 impl ArticleSummary {
     pub fn new(summary: &str) -> Self {
         Self {
-            component: Paragraph::default()
+            component: Textarea::default()
                 .borders(
                     Borders::default()
                         .color(Color::LightCyan)
@@ -141,19 +144,70 @@ impl ArticleSummary {
                 )
                 .foreground(Color::Reset)
                 .title("Summary", Alignment::Left)
-                .text(
-                    summary
-                        .split('\n')
-                        .map(TextSpan::from)
-                        .collect::<Vec<TextSpan>>()
-                        .as_slice(),
-                ),
+                .step(4)
+                .highlighted_str("• ")
+                .text_rows(Self::make_summary_rows(summary).as_slice()),
         }
+    }
+
+    /// ### make_summary_rows
+    ///
+    /// Make summary rows
+    fn make_summary_rows(summary: &str) -> Vec<TextSpan> {
+        let summary =
+            str_helpers::replace_multiple_newlines(summary.trim_matches('\n').trim(), "\n");
+        // Split summary by newline
+        summary.split('\n').map(TextSpan::from).collect()
     }
 }
 
 impl Component<Msg, NoUserEvent> for ArticleSummary {
-    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Msg> {
-        None
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => {
+                self.perform(Cmd::Scroll(Direction::Down));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Scroll(Direction::Up));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => {
+                // Scroll twice
+                self.perform(Cmd::Scroll(Direction::Down));
+                self.perform(Cmd::Scroll(Direction::Down));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => {
+                // Scroll twice
+                self.perform(Cmd::Scroll(Direction::Up));
+                self.perform(Cmd::Scroll(Direction::Up));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => {
+                self.perform(Cmd::GoTo(Position::Begin));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => Some(Msg::ArticleBlur),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => Some(Msg::OpenArticle),
+            _ => None,
+        }
     }
 }

@@ -76,7 +76,10 @@ impl Component<Msg, NoUserEvent> for FeedList {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::FeedListBlur),
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab | Key::Right,
+                ..
+            }) => return Some(Msg::FeedListBlur),
             _ => return None,
         };
         if let CmdResult::Changed(State::One(StateValue::Usize(index))) = cmd_result {
@@ -139,7 +142,13 @@ impl Component<Msg, NoUserEvent> for ArticleList {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::ArticleListBlur),
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab | Key::Left,
+                ..
+            }) => return Some(Msg::ArticleListBlur),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => return Some(Msg::GoReadArticle),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => return Some(Msg::OpenArticle),

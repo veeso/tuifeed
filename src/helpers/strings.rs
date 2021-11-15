@@ -30,6 +30,7 @@ use unicode_truncate::UnicodeTruncateStr;
 
 lazy_static! {
     static ref HTML_TAG_REGEX: Regex = Regex::new(r"<[^>]+>").unwrap();
+    static ref REPEATED_NEWLINES_REGEX: Regex = Regex::new(r"(\r?\n|\r)\d*(\r?\n|\r)").unwrap();
 }
 
 /// ### elide_string_at
@@ -41,6 +42,13 @@ pub fn elide_string_at(s: &str, len: usize) -> String {
     } else {
         format!("{}…", s.unicode_truncate(len - 1).0)
     }
+}
+
+/// ### replace_multiple_newlines
+///
+/// Remove repeated newlines in string and replace them with `with`
+pub fn replace_multiple_newlines(s: &str, with: &str) -> String {
+    REPEATED_NEWLINES_REGEX.replace_all(s, with).to_string()
 }
 
 /// strip_html_tags
@@ -92,6 +100,27 @@ mod test {
                 r#"<p><img src="https://images2.corriereobjects.it/methode_image/2021/11/09/Cultura/Foto%20Cltura%20-%20Trattate/Il%20salvataggio%20delle%20vacche%20bis-kWoC-U3300981161016RfG-656x492@Corriere-Web-Sezioni.jpg" title="Polesine, novembre 1951,settant’anni fa l’alluvione che travolse il Veneto" alt="Polesine, novembre 1951 />Hello</p> World!"#
             ),
             "Hello World!"
+        );
+    }
+
+    #[test]
+    fn should_replace_multiple_newlines() {
+        assert_eq!(
+            replace_multiple_newlines(
+                r"Hello, world!
+
+
+How are you?
+I'm fine,
+thanks!",
+                "\n"
+            )
+            .as_str(),
+            r"Hello, world!
+
+How are you?
+I'm fine,
+thanks!"
         );
     }
 }

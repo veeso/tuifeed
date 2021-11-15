@@ -348,6 +348,9 @@ impl Update<Id, Msg, NoUserEvent> for Model {
     fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
         self.redraw = true;
         match msg.unwrap_or(Msg::None) {
+            Msg::ArticleBlur => {
+                assert!(view.active(&Id::ArticleList).is_ok());
+            }
             Msg::ArticleChanged(article) => {
                 self.update_article(view, article);
             }
@@ -383,7 +386,9 @@ impl Update<Id, Msg, NoUserEvent> for Model {
             Msg::FetchAllSources => {
                 self.task(Task::FetchSources);
             }
-            Msg::None => {}
+            Msg::GoReadArticle => {
+                let _ = view.active(&Id::ArticleSummary);
+            }
             Msg::OpenArticle => {
                 if let Ok(Some(AttrValue::String(url))) =
                     view.query(&Id::ArticleLink, Attribute::Text)
@@ -396,6 +401,7 @@ impl Update<Id, Msg, NoUserEvent> for Model {
             Msg::ShowQuitPopup => {
                 self.mount_quit(view);
             }
+            Msg::None => {}
         }
         None
     }

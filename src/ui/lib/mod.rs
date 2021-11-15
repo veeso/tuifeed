@@ -29,4 +29,4 @@ mod client;
 mod kiosk;
 
 pub use client::FeedClient;
-pub use kiosk::{FeedState, Kiosk};
+pub use kiosk::{FeedState, FlatFeedState, Kiosk};

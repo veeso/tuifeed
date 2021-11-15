@@ -50,8 +50,19 @@ pub enum FeedState {
     Error(FeedError),
     /// Loading feed
     Loading,
-    /// Not fetched yet
-    None,
+}
+
+/// ## FlatFeedState
+///
+/// Describes the current feed state without containing the object
+#[derive(Debug, PartialEq)]
+pub enum FlatFeedState {
+    /// Feed loaded with success
+    Success,
+    /// Failed to fetch / parse feed
+    Error,
+    /// Loading feed
+    Loading,
 }
 
 impl Kiosk {
@@ -60,6 +71,16 @@ impl Kiosk {
     /// Insert a feed into kiosk
     pub fn insert_feed<S: AsRef<str>>(&mut self, source: S, state: FeedState) {
         self.feed.insert(source.as_ref().to_string(), state);
+    }
+
+    /// ### get_state
+    ///
+    /// Returns the list of sources associated to their feed list
+    pub fn get_state(&self) -> Vec<(String, FlatFeedState)> {
+        self.feed
+            .iter()
+            .map(|(name, state)| (name.to_string(), FlatFeedState::from(state)))
+            .collect()
     }
 
     /// ### get_feed_state
@@ -86,6 +107,16 @@ impl Kiosk {
     /// Get sources in kiosk
     pub fn sources(&self) -> Vec<&String> {
         self.feed.keys().into_iter().collect()
+    }
+}
+
+impl From<&FeedState> for FlatFeedState {
+    fn from(f: &FeedState) -> Self {
+        match f {
+            &FeedState::Error(_) => Self::Error,
+            &FeedState::Loading => Self::Loading,
+            &FeedState::Success(_) => Self::Success,
+        }
     }
 }
 
@@ -150,5 +181,20 @@ mod test {
             }),
         );
         assert_eq!(kiosk.sources(), vec![&String::from("lefigaro")]);
+    }
+
+    #[test]
+    fn should_return_kiosk_state() {
+        let mut kiosk = Kiosk::default();
+        kiosk.insert_feed(
+            "lefigaro",
+            FeedState::Success(Feed {
+                articles: Vec::default(),
+            }),
+        );
+        kiosk.insert_feed(
+            "nytimes",
+            FeedState::Error(FeedError::Parse(String::from("parse error"))),
+        );
     }
 }

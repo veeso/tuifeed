@@ -37,6 +37,7 @@ use crate::helpers::open as open_helpers;
 use crate::helpers::strings as str_helpers;
 use crate::helpers::ui as ui_helpers;
 
+use std::time::{Duration, Instant};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
@@ -45,6 +46,7 @@ use tuirealm::{Application, AttrValue, Attribute, NoUserEvent, State, StateValue
 pub struct Model {
     kiosk: Kiosk,
     quit: bool,
+    last_redraw: Instant,
     redraw: bool,
     tasks: Vec<Task>,
     terminal: TerminalBridge,
@@ -57,6 +59,7 @@ impl Model {
     pub fn new(terminal: TerminalBridge) -> Self {
         Self {
             kiosk: Kiosk::default(),
+            last_redraw: Instant::now(),
             quit: false,
             redraw: true,
             tasks: Vec::new(),
@@ -113,8 +116,8 @@ impl Model {
     /// ### update_source
     ///
     /// Update source in kiosk
-    pub fn update_source(&mut self, name: String, state: FeedState) {
-        self.kiosk.insert_feed(name, state);
+    pub fn update_source(&mut self, name: &str, state: FeedState) {
+        self.kiosk.insert_feed(name.to_string(), state);
     }
 
     /// ### sorted_sources
@@ -135,12 +138,20 @@ impl Model {
         tasks
     }
 
+    /// ### since_last_redraw
+    ///
+    /// Returns elapsed time since last redraw
+    pub fn since_last_redraw(&self) -> Duration {
+        self.last_redraw.elapsed()
+    }
+
     /// ### view
     ///
     /// View function to render the view
     pub fn view(&mut self, app: &mut Application<Id, Msg, NoUserEvent>) {
         if self.redraw {
             self.redraw = false;
+            self.last_redraw = Instant::now();
             assert!(self
                 .terminal
                 .raw_mut()
@@ -255,7 +266,9 @@ impl Model {
     ///
     /// Get feed list component
     pub fn get_feed_list(&self) -> FeedList {
-        FeedList::new(self.sorted_sources().as_slice())
+        let mut sources = self.kiosk.get_state();
+        sources.sort_by(|a, b| a.0.cmp(&b.0));
+        FeedList::new(self.kiosk.get_state())
     }
 
     /// ### view_quit
@@ -290,9 +303,7 @@ impl Model {
     ///
     /// Update article into view by index
     fn update_article(&self, view: &mut View<Id, Msg, NoUserEvent>, article: usize) {
-        if let State::One(StateValue::Usize(feed)) = view.state(&Id::FeedList).ok().unwrap() {
-            let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
-            let feed = self.kiosk.get_feed(feed.as_str()).unwrap();
+        if let Some(feed) = self.get_selected_feed(view) {
             if let Some(article) = feed.articles().nth(article) {
                 let (authors, date, link, summary, title) = Self::get_article_view(article);
                 assert!(view.remount(Id::ArticleAuthors, Box::new(authors)).is_ok());
@@ -301,6 +312,28 @@ impl Model {
                 assert!(view.remount(Id::ArticleSummary, Box::new(summary)).is_ok());
                 assert!(view.remount(Id::ArticleTitle, Box::new(title)).is_ok());
             }
+        }
+    }
+
+    /// ### get_selected_feed
+    ///
+    /// Get currently selected feed
+    fn get_selected_feed(&self, view: &mut View<Id, Msg, NoUserEvent>) -> Option<&Feed> {
+        if let Some(feed) = self.get_selected_feed_name(view) {
+            Some(self.kiosk.get_feed(feed.as_str()).unwrap())
+        } else {
+            None
+        }
+    }
+
+    /// ### get_selected_feed_name
+    ///
+    /// Get currently selected feed name
+    fn get_selected_feed_name(&self, view: &mut View<Id, Msg, NoUserEvent>) -> Option<String> {
+        if let State::One(StateValue::Usize(feed)) = view.state(&Id::FeedList).ok().unwrap() {
+            Some((*self.sorted_sources().get(feed).unwrap()).clone())
+        } else {
+            None
         }
     }
 }
@@ -335,7 +368,12 @@ impl Update<Id, Msg, NoUserEvent> for Model {
             Msg::FeedListBlur => {
                 assert!(view.active(&Id::ArticleList).is_ok());
             }
-            Msg::FetchSources => {
+            Msg::FetchSource => {
+                if let Some(name) = self.get_selected_feed_name(view) {
+                    self.task(Task::FetchSource(name))
+                }
+            }
+            Msg::FetchAllSources => {
                 self.task(Task::FetchSources);
             }
             Msg::None => {}

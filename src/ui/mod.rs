@@ -33,15 +33,17 @@ use components::{ErrorPopup, GlobalListener};
 use model::Model;
 
 use crate::config::Config;
-use lib::{FeedClient, Kiosk};
+use lib::{FeedClient, FeedState, Kiosk};
 
 use std::time::Duration;
 use tuirealm::{
     application::PollStrategy,
     event::{Key, KeyEvent, KeyModifiers},
     terminal::TerminalBridge,
-    Application, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause,
+    Application, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause,
 };
+
+const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(100);
 
 /// ## Id
 ///
@@ -72,7 +74,8 @@ pub enum Msg {
     CloseQuitPopup,
     FeedChanged(usize),
     FeedListBlur,
-    FetchSources,
+    FetchSource,
+    FetchAllSources,
     OpenArticle,
     ShowQuitPopup,
     None,
@@ -83,6 +86,7 @@ pub enum Msg {
 /// A task requested by the model in the Update routine, to be performed by the ui
 #[derive(Debug, Clone, PartialEq)]
 pub enum Task {
+    FetchSource(String),
     FetchSources,
     ShowError(String),
 }
@@ -115,7 +119,7 @@ impl Ui {
     pub fn run(&mut self) {
         self.model.init_terminal();
         // Fetch sources once
-        self.fetch_sources();
+        self.fetch_all_sources();
         // Main loop
         while !self.model.quit() {
             if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
@@ -125,6 +129,8 @@ impl Ui {
             self.poll_fetched_sources();
             // Run tasks
             self.run_tasks();
+            // Check whether to force redraw
+            self.should_force_redraw();
             // View
             self.model.view(&mut self.app);
         }
@@ -139,66 +145,41 @@ impl Ui {
     fn run_tasks(&mut self) {
         for task in self.model.get_tasks().into_iter() {
             match task {
-                Task::FetchSources => self.fetch_sources(), // TODO: must accept one argument
+                Task::FetchSource(name) => {
+                    let uri = self.config.sources.get(&name).cloned();
+                    if let Some(uri) = uri {
+                        self.fetch_source(name.as_str(), uri.as_str())
+                    }
+                }
+                Task::FetchSources => self.fetch_all_sources(),
                 Task::ShowError(err) => self.mount_error_popup(err),
             }
         }
     }
 
-    /// ### fetch_sources
+    /// ### should_force_redraw
+    fn should_force_redraw(&mut self) {
+        // If source are loading and at least 100ms has elapsed since last redraw...
+        if self.client.running() && self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+            self.model.force_redraw();
+        }
+    }
+
+    // -- source fetch
+
+    /// ### fetch_all_sources
     ///
     /// Fetch all sources and update Ui
-    fn fetch_sources(&mut self) {
+    fn fetch_all_sources(&mut self) {
         // Fetch sources
-        for (name, uri) in self.config.sources.iter() {
+        let sources: Vec<(String, String)> = self
+            .config
+            .sources
+            .iter()
+            .map(|(name, uri)| (name.clone(), uri.clone()))
+            .collect();
+        for (name, uri) in sources.into_iter() {
             self.fetch_source(name.as_str(), uri.as_str());
-        }
-        // If result is error, let's show the error message
-        if let Err(err) = result {
-            self.mount_error_popup(format!("Could not fetch feed: {}", err));
-        } else {
-            assert!(self
-                .app
-                .remount(Id::FeedList, Box::new(self.model.get_feed_list()), vec![])
-                .is_ok());
-            if let Some(source) = self.model.sorted_sources().get(0) {
-                let feed = self.model.kiosk().get_feed(source.as_str()).unwrap();
-                assert!(self
-                    .app
-                    .remount(
-                        Id::ArticleList,
-                        Box::new(Model::get_article_list(
-                            feed,
-                            self.model.max_article_name_len()
-                        )),
-                        vec![]
-                    )
-                    .is_ok());
-                // Mount first article
-                if let Some(article) = feed.articles().next() {
-                    let (authors, date, link, summary, title) = Model::get_article_view(article);
-                    assert!(self
-                        .app
-                        .remount(Id::ArticleAuthors, Box::new(authors), vec![])
-                        .is_ok());
-                    assert!(self
-                        .app
-                        .remount(Id::ArticleDate, Box::new(date), vec![])
-                        .is_ok());
-                    assert!(self
-                        .app
-                        .remount(Id::ArticleLink, Box::new(link), vec![])
-                        .is_ok());
-                    assert!(self
-                        .app
-                        .remount(Id::ArticleSummary, Box::new(summary), vec![])
-                        .is_ok());
-                    assert!(self
-                        .app
-                        .remount(Id::ArticleTitle, Box::new(title), vec![])
-                        .is_ok());
-                }
-            }
         }
     }
 
@@ -207,14 +188,98 @@ impl Ui {
     /// Start a worker to fetch sources
     fn fetch_source(&mut self, name: &str, uri: &str) {
         self.client.fetch(name, uri);
+        // Mark source as Loading
+        self.model.update_source(name, FeedState::Loading);
     }
 
     /// ### poll_fetched_sources
     ///
     /// Get result for all fetched sources
     fn poll_fetched_sources(&mut self) {
-        // TODO: impl
-        todo!()
+        if let Some((name, result)) = self.client.poll() {
+            // Adapt state
+            let state = match result {
+                Ok(feed) => FeedState::Success(feed),
+                Err(err) => {
+                    // Mount error and return err
+                    self.mount_error_popup(format!(r#"Could not fetch feed "{}"": {}"#, name, err));
+                    FeedState::Error(err)
+                }
+            };
+            // Update source
+            self.model.update_source(name.as_str(), state);
+            // Update feed list and initialize article
+            self.update_feed_list();
+            if self.is_article_list_empty() {
+                self.init_article();
+            }
+        }
+    }
+
+    fn update_feed_list(&mut self) {
+        assert!(self
+            .app
+            .remount(Id::FeedList, Box::new(self.model.get_feed_list()), vec![])
+            .is_ok());
+    }
+
+    // -- init
+
+    /// ### init_article
+    ///
+    /// Initialize article list entries and article.
+    /// This function should be called only if article list is empty
+    fn init_article(&mut self) {
+        if let Some(source) = self.model.sorted_sources().get(0) {
+            let feed = self.model.kiosk().get_feed(source.as_str()).unwrap();
+            assert!(self
+                .app
+                .remount(
+                    Id::ArticleList,
+                    Box::new(Model::get_article_list(
+                        feed,
+                        self.model.max_article_name_len()
+                    )),
+                    vec![]
+                )
+                .is_ok());
+            // Mount first article
+            if let Some(article) = feed.articles().next() {
+                let (authors, date, link, summary, title) = Model::get_article_view(article);
+                assert!(self
+                    .app
+                    .remount(Id::ArticleAuthors, Box::new(authors), vec![])
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::ArticleDate, Box::new(date), vec![])
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::ArticleLink, Box::new(link), vec![])
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::ArticleSummary, Box::new(summary), vec![])
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::ArticleTitle, Box::new(title), vec![])
+                    .is_ok());
+            }
+        }
+    }
+
+    /// ### is_article_list_empty
+    ///
+    /// Returns whether article list is empty
+    fn is_article_list_empty(&self) -> bool {
+        self.app
+            .query(&Id::ArticleList, Attribute::Content)
+            .ok()
+            .flatten()
+            .map(|x| x.unwrap_table().len() == 0)
+            .unwrap_or(true)
     }
 
     /// ### mount_error_popup
@@ -273,13 +338,20 @@ impl Ui {
 
     /// ### subs
     ///
-    /// Get application subscriptions
+    /// global listener subscriptions
     fn subs() -> Vec<Sub<NoUserEvent>> {
         vec![
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Esc,
                     modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('r'),
+                    modifiers: KeyModifiers::CONTROL,
                 }),
                 SubClause::Always,
             ),

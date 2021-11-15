@@ -95,10 +95,12 @@ mod tests {
     use super::*;
 
     use pretty_assertions::assert_eq;
+    use serial_test::serial;
     use std::fs::{File, OpenOptions};
     use std::io::Write;
 
     #[test]
+    #[serial]
     fn should_get_config_dir() {
         // Create and get conf_dir
         let conf_dir: PathBuf = init_config_dir().ok().unwrap().unwrap();
@@ -107,6 +109,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_fail_getting_config_dir() {
         let mut conf_dir: PathBuf = std::env::temp_dir();
         conf_dir.push("tuifeed");
@@ -128,6 +131,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_get_config_file() {
         let conf_dir: PathBuf = init_config_dir().ok().unwrap().unwrap();
         let cfg_file = get_config_file(conf_dir.as_path()).ok().unwrap();

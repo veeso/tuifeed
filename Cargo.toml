@@ -35,5 +35,6 @@ unicode-truncate = "^0.2.0"
 ureq = { version = "2.3.0", features = [ "tls" ] }
 
 [dev-dependencies]
-pretty_assertions = "0.7.2"
+pretty_assertions = "^0.7.2"
+serial_test = "^0.5.1"
 tempfile = "^3.1.0"

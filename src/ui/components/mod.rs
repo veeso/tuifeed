@@ -37,7 +37,7 @@ pub use popups::{ErrorPopup, QuitPopup};
 
 use tui_realm_stdlib::Phantom;
 use tuirealm::{
-    event::{Key, KeyEvent},
+    event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent,
 };
 
@@ -52,8 +52,12 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => Some(Msg::ShowQuitPopup),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('r'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Msg::FetchAllSources),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('r'),
                 ..
-            }) => Some(Msg::FetchSources),
+            }) => Some(Msg::FetchSource),
             _ => None,
         }
     }

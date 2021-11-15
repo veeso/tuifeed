@@ -25,21 +25,148 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use tui_realm_stdlib::{states::ListStates, List};
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use crate::ui::lib::FlatFeedState;
+
+use tui_realm_stdlib::List;
+use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Borders, Color, Props, Style, Table, TextModifiers,
+    Alignment, AttrValue, Attribute, BorderType, Borders, Color, Style, TextModifiers, TextSpan,
 };
 use tuirealm::tui::{
     layout::{Corner, Rect},
     text::{Span, Spans},
     widgets::{List as TuiList, ListItem, ListState},
 };
-use tuirealm::{Frame, MockComponent, State, StateValue};
+use tuirealm::{Frame, MockComponent, State};
+
+const SEQUENCE: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
+
+struct OwnStates {
+    step: usize,
+}
+
+impl Default for OwnStates {
+    fn default() -> Self {
+        Self { step: 0 }
+    }
+}
+
+impl OwnStates {
+    pub fn step(&mut self) -> char {
+        let ch = SEQUENCE.get(self.step).cloned().unwrap_or(' ');
+        // Incr step
+        if self.step + 1 >= SEQUENCE.len() {
+            self.step = 0;
+        } else {
+            self.step += 1;
+        }
+        ch
+    }
+}
 
 /// ## FeedList
 ///
-/// A list which prepend the fetch state for each source for the feed
+/// A list which prepends the fetch state for each source for the feed
 pub struct FeedList {
     list: List,
+    items: Vec<(String, FlatFeedState)>,
+    states: OwnStates,
+}
+
+impl FeedList {
+    pub fn new(items: Vec<(String, FlatFeedState)>) -> Self {
+        Self {
+            list: List::default()
+                .highlighted_color(Color::LightBlue)
+                .highlighted_str("➤ ")
+                .rewind(true)
+                .scroll(true)
+                .step(4)
+                .title("Feed", Alignment::Center)
+                .borders(
+                    Borders::default()
+                        .color(Color::LightBlue)
+                        .modifiers(BorderType::Rounded),
+                )
+                .rows(
+                    [..items.len()]
+                        .iter()
+                        .map(|_| vec![TextSpan::new("")])
+                        .collect(),
+                ),
+            items,
+            states: OwnStates::default(),
+        }
+    }
+
+    fn feed_state_to_span(state: &FlatFeedState, loading_step: char) -> Span {
+        match state {
+            &FlatFeedState::Success => Span::from(" "),
+            &FlatFeedState::Loading => Span::from(format!("{} ", loading_step)),
+            &FlatFeedState::Error => Span::styled(
+                "✘ ",
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(TextModifiers::BOLD),
+            ),
+        }
+    }
+}
+
+impl MockComponent for FeedList {
+    fn view(&mut self, frame: &mut Frame, area: Rect) {
+        let focus = self
+            .query(Attribute::Focus)
+            .unwrap_or(AttrValue::Flag(false))
+            .unwrap_flag();
+        let div = tui_realm_stdlib::utils::get_block(
+            Borders::default()
+                .color(Color::LightBlue)
+                .modifiers(BorderType::Rounded),
+            Some(("Feed".to_string(), Alignment::Center)),
+            focus,
+            None,
+        );
+        let step = self.states.step();
+        // Make list entries
+        let list_items: Vec<ListItem> = self
+            .items
+            .iter()
+            .map(|(name, state)| {
+                ListItem::new(Spans::from(vec![
+                    Self::feed_state_to_span(state, step),
+                    Span::from(name.as_str()),
+                ]))
+            })
+            .collect();
+        let (fg, bg): (Color, Color) = match focus {
+            true => (Color::Reset, Color::LightBlue),
+            false => (Color::LightBlue, Color::Reset),
+        };
+        // Make list
+        let list = TuiList::new(list_items)
+            .block(div)
+            .start_corner(Corner::TopLeft)
+            .highlight_style(Style::default().fg(fg).bg(bg))
+            .highlight_symbol("➤ ");
+        let mut state: ListState = ListState::default();
+        state.select(Some(self.list.states.list_index));
+        frame.render_stateful_widget(list, area, &mut state);
+    }
+
+    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+        self.list.query(attr)
+    }
+
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.list.attr(attr, value)
+    }
+
+    fn state(&self) -> State {
+        self.list.state()
+    }
+
+    fn perform(&mut self, cmd: Cmd) -> CmdResult {
+        self.list.perform(cmd)
+    }
 }

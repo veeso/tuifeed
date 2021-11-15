@@ -45,7 +45,7 @@ use std::slice::Iter;
 /// Contains, for a feed source, the list of articles fetched from remote
 #[derive(Debug, Clone, PartialEq)]
 pub struct Feed {
-    articles: Vec<Article>,
+    pub(crate) articles: Vec<Article>,
 }
 
 /// ## Article

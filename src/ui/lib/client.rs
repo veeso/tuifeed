@@ -54,7 +54,7 @@ impl FeedClient {
         while i < self.workers.len() {
             // if worker at `i` is joinable, join and return
             if self.workers[i].is_joinable() {
-                let mut worker = self.workers.remove(i);
+                let worker = self.workers.remove(i);
                 // Join and return
                 return Some(worker.join());
             }
@@ -62,13 +62,23 @@ impl FeedClient {
         }
         None
     }
+
+    /// ### running
+    ///
+    /// Returns whether client has running workers
+    pub fn running(&self) -> bool {
+        !self.workers.is_empty()
+    }
 }
 
 impl Drop for FeedClient {
     fn drop(&mut self) {
         // Wait for all
-        for worker in self.workers.into_iter() {
+        let mut i = 0;
+        while i < self.workers.len() {
+            let worker = self.workers.remove(i);
             let _ = worker.join();
+            i += 1;
         }
     }
 }
@@ -88,8 +98,9 @@ impl WorkerThread {
     pub fn start(name: &str, uri: &str) -> Self {
         let completed = Arc::new(RwLock::new(false));
         let completed_t = Arc::clone(&completed);
-        let thread =
-            thread::spawn(|| Worker::new(completed_t, name.to_string(), uri.to_string()).run());
+        let name = name.to_string();
+        let uri = uri.to_string();
+        let thread = thread::spawn(|| Worker::new(completed_t, name, uri).run());
         Self(completed, thread)
     }
 
@@ -136,16 +147,18 @@ impl Worker {
     ///
     /// Run function for worker
     pub fn run(&mut self) -> (String, FeedResult<Feed>) {
-        let fetch_result = Client::default().fetch(self.uri.as_str());
         // Set running to false
         self.stop();
         // Return to handle
-        (self.name, Client::default().fetch(self.uri.as_str()))
+        (
+            self.name.clone(),
+            Client::default().fetch(self.uri.as_str()),
+        )
     }
 
     fn stop(&mut self) {
         // NOTE: keep these brackets to drop running after block
-        if let Ok(completed) = self.completed.write() {
+        if let Ok(mut completed) = self.completed.write() {
             *completed = true;
         }
     }
@@ -157,6 +170,30 @@ mod test {
     use super::*;
 
     use pretty_assertions::assert_eq;
+    use std::thread::sleep;
+    use std::time::{Duration, Instant};
 
-    // TODO: impl tests
+    #[test]
+    fn should_run_worker() {
+        let mut client = FeedClient::default();
+        assert_eq!(client.running(), false);
+        // Start worker
+        client.fetch(
+            "Le Figaro",
+            "https://www.lefigaro.fr/rss/figaro_actualites.xml",
+        );
+        assert_eq!(client.running(), true);
+        // Wait up to 10 seconds before failing
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(10) {
+            if let Some((name, result)) = client.poll() {
+                assert_eq!(name.as_str(), "Le Figaro");
+                assert!(result.is_ok());
+                assert_eq!(client.running(), false);
+                return;
+            }
+            sleep(Duration::from_millis(500));
+        }
+        panic!("Failed to fetch source")
+    }
 }

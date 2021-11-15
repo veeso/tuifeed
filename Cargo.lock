@@ -635,6 +635,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "serial_test"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0bccbcf40c8938196944a3da0e133e031a33f4d6b72db3bda3cc556e361905d"
+dependencies = [
+ "lazy_static",
+ "parking_lot",
+ "serial_test_derive",
+]
+
+[[package]]
+name = "serial_test_derive"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2acd6defeddb41eb60bb468f8825d0cfd0c2a76bc03bfd235b6a1dc4f6a1ad5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "signal-hook"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -794,9 +816,9 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-stdlib"
-version = "1.0.1"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6143455389f67580cbd4aea01fa252af67e430bed3a92b9a0b0ad82aae7a6b5"
+checksum = "989d8272a8fd5ae1599d79dd1dae10528e24e06edf21b08067bf211fb69f6d15"
 dependencies = [
  "textwrap",
  "tuirealm",
@@ -817,6 +839,7 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "serde",
+ "serial_test",
  "tempfile",
  "thiserror",
  "toml",

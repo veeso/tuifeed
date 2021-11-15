@@ -27,6 +27,8 @@
  */
 mod feed_list;
 
+use crate::ui::lib::FlatFeedState;
+
 use super::Msg;
 
 use tui_realm_stdlib::List;
@@ -41,26 +43,9 @@ pub struct FeedList {
 }
 
 impl FeedList {
-    pub fn new(sources: &[&String]) -> Self {
+    pub fn new(sources: Vec<(String, FlatFeedState)>) -> Self {
         Self {
-            component: feed_list::FeedList::default()
-                .highlighted_color(Color::LightBlue)
-                .highlighted_str("➤ ")
-                .rewind(true)
-                .scroll(true)
-                .step(4)
-                .title("Feed", Alignment::Center)
-                .borders(
-                    Borders::default()
-                        .color(Color::LightBlue)
-                        .modifiers(BorderType::Rounded),
-                )
-                .rows(
-                    sources
-                        .iter()
-                        .map(|x| vec![TextSpan::from(x.as_str())])
-                        .collect(),
-                ),
+            component: feed_list::FeedList::new(sources),
         }
     }
 }

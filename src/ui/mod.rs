@@ -39,11 +39,15 @@ use std::time::Duration;
 use tuirealm::{
     application::PollStrategy,
     event::{Key, KeyEvent, KeyModifiers},
+    props::{PropPayload, PropValue},
     terminal::TerminalBridge,
-    Application, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause,
+    Application, AttrValue, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause,
+    SubEventClause,
 };
 
-const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(100);
+use self::lib::FlatFeedState;
+
+const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(50);
 
 /// ## Id
 ///
@@ -103,7 +107,7 @@ impl Ui {
     ///
     /// Instantiates a new Ui
     pub fn new(config: Config, tick: u64) -> Self {
-        let model = Model::new(Self::init_terminal());
+        let model = Model::new(&config, Self::init_terminal());
         let app = Self::init_application(&model, tick);
         Self {
             config,
@@ -130,7 +134,7 @@ impl Ui {
             // Run tasks
             self.run_tasks();
             // Check whether to force redraw
-            self.should_force_redraw();
+            self.check_force_redraw();
             // View
             self.model.view(&mut self.app);
         }
@@ -157,8 +161,10 @@ impl Ui {
         }
     }
 
-    /// ### should_force_redraw
-    fn should_force_redraw(&mut self) {
+    /// ### check_force_redraw
+    ///
+    /// Check whether should force redraw
+    fn check_force_redraw(&mut self) {
         // If source are loading and at least 100ms has elapsed since last redraw...
         if self.client.running() && self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
             self.model.force_redraw();
@@ -170,6 +176,7 @@ impl Ui {
     /// ### fetch_all_sources
     ///
     /// Fetch all sources and update Ui
+    #[allow(clippy::needless_collect)]
     fn fetch_all_sources(&mut self) {
         // Fetch sources
         let sources: Vec<(String, String)> = self
@@ -190,6 +197,9 @@ impl Ui {
         self.client.fetch(name, uri);
         // Mark source as Loading
         self.model.update_source(name, FeedState::Loading);
+        self.update_feed_list(name, FlatFeedState::Loading);
+        // Force redraw
+        self.model.force_redraw();
     }
 
     /// ### poll_fetched_sources
@@ -202,24 +212,41 @@ impl Ui {
                 Ok(feed) => FeedState::Success(feed),
                 Err(err) => {
                     // Mount error and return err
-                    self.mount_error_popup(format!(r#"Could not fetch feed "{}"": {}"#, name, err));
+                    self.mount_error_popup(format!(r#"Could not fetch feed "{}": {}"#, name, err));
                     FeedState::Error(err)
                 }
             };
             // Update source
+            let flat_state = FlatFeedState::from(&state);
             self.model.update_source(name.as_str(), state);
             // Update feed list and initialize article
-            self.update_feed_list();
+            self.update_feed_list(name.as_str(), flat_state);
             if self.is_article_list_empty() {
                 self.init_article();
             }
+            // Force redraw
+            self.model.force_redraw();
         }
     }
 
-    fn update_feed_list(&mut self) {
+    fn update_feed_list(&mut self, name: &str, state: FlatFeedState) {
+        // Update item
+        let state = match state {
+            FlatFeedState::Error => components::lists::FEED_STATE_ERROR,
+            FlatFeedState::Loading => components::lists::FEED_STATE_LOADING,
+            FlatFeedState::Success => components::lists::FEED_STATE_SUCCESS,
+        };
+        let prop_value = AttrValue::Payload(PropPayload::Tup2((
+            PropValue::Str(name.to_string()),
+            PropValue::U8(state),
+        )));
         assert!(self
             .app
-            .remount(Id::FeedList, Box::new(self.model.get_feed_list()), vec![])
+            .attr(
+                &Id::FeedList,
+                Attribute::Custom(components::lists::FEED_LIST_PROP_ITEMS),
+                prop_value
+            )
             .is_ok());
     }
 
@@ -231,41 +258,42 @@ impl Ui {
     /// This function should be called only if article list is empty
     fn init_article(&mut self) {
         if let Some(source) = self.model.sorted_sources().get(0) {
-            let feed = self.model.kiosk().get_feed(source.as_str()).unwrap();
-            assert!(self
-                .app
-                .remount(
-                    Id::ArticleList,
-                    Box::new(Model::get_article_list(
-                        feed,
-                        self.model.max_article_name_len()
-                    )),
-                    vec![]
-                )
-                .is_ok());
-            // Mount first article
-            if let Some(article) = feed.articles().next() {
-                let (authors, date, link, summary, title) = Model::get_article_view(article);
+            if let Some(feed) = self.model.kiosk().get_feed(source.as_str()) {
                 assert!(self
                     .app
-                    .remount(Id::ArticleAuthors, Box::new(authors), vec![])
+                    .remount(
+                        Id::ArticleList,
+                        Box::new(Model::get_article_list(
+                            feed,
+                            self.model.max_article_name_len()
+                        )),
+                        vec![]
+                    )
                     .is_ok());
-                assert!(self
-                    .app
-                    .remount(Id::ArticleDate, Box::new(date), vec![])
-                    .is_ok());
-                assert!(self
-                    .app
-                    .remount(Id::ArticleLink, Box::new(link), vec![])
-                    .is_ok());
-                assert!(self
-                    .app
-                    .remount(Id::ArticleSummary, Box::new(summary), vec![])
-                    .is_ok());
-                assert!(self
-                    .app
-                    .remount(Id::ArticleTitle, Box::new(title), vec![])
-                    .is_ok());
+                // Mount first article
+                if let Some(article) = feed.articles().next() {
+                    let (authors, date, link, summary, title) = Model::get_article_view(article);
+                    assert!(self
+                        .app
+                        .remount(Id::ArticleAuthors, Box::new(authors), vec![])
+                        .is_ok());
+                    assert!(self
+                        .app
+                        .remount(Id::ArticleDate, Box::new(date), vec![])
+                        .is_ok());
+                    assert!(self
+                        .app
+                        .remount(Id::ArticleLink, Box::new(link), vec![])
+                        .is_ok());
+                    assert!(self
+                        .app
+                        .remount(Id::ArticleSummary, Box::new(summary), vec![])
+                        .is_ok());
+                    assert!(self
+                        .app
+                        .remount(Id::ArticleTitle, Box::new(title), vec![])
+                        .is_ok());
+                }
             }
         }
     }
@@ -278,7 +306,7 @@ impl Ui {
             .query(&Id::ArticleList, Attribute::Content)
             .ok()
             .flatten()
-            .map(|x| x.unwrap_table().len() == 0)
+            .map(|x| x.unwrap_table().is_empty())
             .unwrap_or(true)
     }
 

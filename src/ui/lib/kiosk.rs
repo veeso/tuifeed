@@ -112,10 +112,10 @@ impl Kiosk {
 
 impl From<&FeedState> for FlatFeedState {
     fn from(f: &FeedState) -> Self {
-        match f {
-            &FeedState::Error(_) => Self::Error,
-            &FeedState::Loading => Self::Loading,
-            &FeedState::Success(_) => Self::Success,
+        match *f {
+            FeedState::Error(_) => Self::Error,
+            FeedState::Loading => Self::Loading,
+            FeedState::Success(_) => Self::Success,
         }
     }
 }

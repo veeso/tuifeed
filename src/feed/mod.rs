@@ -89,9 +89,9 @@ impl From<RssEntry> for Article {
                 .map(|x| str_helpers::strip_html_tags(x.content.as_str()))
                 .unwrap_or_default(),
             url: entry
-                .content
-                .map(|x| x.src.map(|x| x.href))
-                .flatten()
+                .links
+                .get(0)
+                .map(|x| x.href.clone())
                 .unwrap_or(entry.id),
             date: entry.updated.map(DateTime::<Local>::from),
         }

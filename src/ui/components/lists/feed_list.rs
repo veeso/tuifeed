@@ -40,6 +40,11 @@ use tuirealm::tui::{
 use tuirealm::{Frame, MockComponent, State};
 
 const SEQUENCE: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
+pub const FEED_LIST_PROP_ITEMS: &str = "items";
+
+pub const FEED_STATE_ERROR: u8 = 1;
+pub const FEED_STATE_LOADING: u8 = 2;
+pub const FEED_STATE_SUCCESS: u8 = 0;
 
 struct OwnStates {
     step: usize,
@@ -88,22 +93,17 @@ impl FeedList {
                         .color(Color::LightBlue)
                         .modifiers(BorderType::Rounded),
                 )
-                .rows(
-                    [..items.len()]
-                        .iter()
-                        .map(|_| vec![TextSpan::new("")])
-                        .collect(),
-                ),
+                .rows((0..items.len()).map(|_| vec![TextSpan::new("")]).collect()),
             items,
             states: OwnStates::default(),
         }
     }
 
     fn feed_state_to_span(state: &FlatFeedState, loading_step: char) -> Span {
-        match state {
-            &FlatFeedState::Success => Span::from(" "),
-            &FlatFeedState::Loading => Span::from(format!("{} ", loading_step)),
-            &FlatFeedState::Error => Span::styled(
+        match *state {
+            FlatFeedState::Success => Span::from("  "),
+            FlatFeedState::Loading => Span::from(format!("{} ", loading_step)),
+            FlatFeedState::Error => Span::styled(
                 "✘ ",
                 Style::default()
                     .fg(Color::Red)
@@ -159,7 +159,25 @@ impl MockComponent for FeedList {
     }
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.list.attr(attr, value)
+        if matches!(attr, Attribute::Custom(FEED_LIST_PROP_ITEMS)) {
+            let (name, state) = value.unwrap_payload().unwrap_tup2();
+            let name = name.unwrap_str();
+            let state = state.unwrap_u8();
+            let state = match state {
+                FEED_STATE_ERROR => FlatFeedState::Error,
+                FEED_STATE_LOADING => FlatFeedState::Loading,
+                FEED_STATE_SUCCESS => FlatFeedState::Success,
+                _ => panic!("Invalid state {}", state),
+            };
+            for (i_name, i_state) in self.items.iter_mut() {
+                if i_name == &name {
+                    *i_state = state;
+                    break;
+                }
+            }
+        } else {
+            self.list.attr(attr, value)
+        }
     }
 
     fn state(&self) -> State {

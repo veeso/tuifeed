@@ -28,7 +28,7 @@
 use super::Msg;
 
 mod article;
-mod lists;
+pub mod lists;
 mod popups;
 
 pub use article::{ArticleAuthors, ArticleDate, ArticleLink, ArticleSummary, ArticleTitle};

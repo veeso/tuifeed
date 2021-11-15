@@ -27,6 +27,10 @@
  */
 mod feed_list;
 
+pub use feed_list::{
+    FEED_LIST_PROP_ITEMS, FEED_STATE_ERROR, FEED_STATE_LOADING, FEED_STATE_SUCCESS,
+};
+
 use crate::ui::lib::FlatFeedState;
 
 use super::Msg;

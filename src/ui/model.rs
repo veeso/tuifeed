@@ -36,6 +36,7 @@ use crate::feed::{Article, Feed};
 use crate::helpers::open as open_helpers;
 use crate::helpers::strings as str_helpers;
 use crate::helpers::ui as ui_helpers;
+use crate::Config;
 
 use std::time::{Duration, Instant};
 use tuirealm::terminal::TerminalBridge;
@@ -56,9 +57,14 @@ impl Model {
     /// ### new
     ///
     /// Instantiates a new `Model`
-    pub fn new(terminal: TerminalBridge) -> Self {
+    pub fn new(config: &Config, terminal: TerminalBridge) -> Self {
+        // Initialize kiosk
+        let mut kiosk = Kiosk::default();
+        for name in config.sources.keys() {
+            kiosk.insert_feed(name, FeedState::Loading);
+        }
         Self {
-            kiosk: Kiosk::default(),
+            kiosk,
             last_redraw: Instant::now(),
             quit: false,
             redraw: true,
@@ -209,7 +215,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         app.view(&Id::QuitPopup, f, popup);
                     } else if app.mounted(&Id::ErrorPopup) {
-                        let popup = ui_helpers::draw_area_in(f.size(), 50, 10);
+                        let popup = ui_helpers::draw_area_in(f.size(), 50, 15);
                         f.render_widget(Clear, popup);
                         app.view(&Id::ErrorPopup, f, popup);
                     }
@@ -268,7 +274,7 @@ impl Model {
     pub fn get_feed_list(&self) -> FeedList {
         let mut sources = self.kiosk.get_state();
         sources.sort_by(|a, b| a.0.cmp(&b.0));
-        FeedList::new(self.kiosk.get_state())
+        FeedList::new(sources)
     }
 
     /// ### view_quit
@@ -359,11 +365,12 @@ impl Update<Id, Msg, NoUserEvent> for Model {
             }
             Msg::FeedChanged(feed) => {
                 let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
-                let feed = self.kiosk.get_feed(feed.as_str()).unwrap();
-                let articles = Self::get_article_list(feed, self.max_article_name_len());
-                assert!(view.remount(Id::ArticleList, Box::new(articles)).is_ok());
-                // Then load the first article of feed
-                self.update_article(view, 0);
+                if let Some(feed) = self.kiosk.get_feed(feed.as_str()) {
+                    let articles = Self::get_article_list(feed, self.max_article_name_len());
+                    assert!(view.remount(Id::ArticleList, Box::new(articles)).is_ok());
+                    // Then load the first article of feed
+                    self.update_article(view, 0);
+                }
             }
             Msg::FeedListBlur => {
                 assert!(view.active(&Id::ArticleList).is_ok());

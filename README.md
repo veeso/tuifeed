@@ -1,9 +1,8 @@
 # tuifeed
 
-<p align="center">~ A terminal news feed reader with a fancy ui ~</p>
-
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.1.0 (FIXME:/10/2021)</p>
+<p align="center">Current version: 0.1.0 (15/11/2021)</p>
+<p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"
@@ -80,9 +79,13 @@ tuifeed is a news feed reader with a fancy terminal user interface. It allows yo
 
 ## Get started 🏁
 
-> ⚠️ I'M STILL WORKING ON IT, DON'T DOWNLOAD IT YET
+You can directly install tuifeed with this simple shell script
 
-Install with cargo
+```sh
+curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/JBhDb" | sh
+```
+
+Otherwise you can opt to install tuifeed with cargo:
 
 ```sh
 cargo install tuifeed
@@ -100,7 +103,7 @@ tuifeed -c
 
 this will open the configuration file in your favourite editor.
 
-> ❗ If you don't have a GUI you can edit your configuration file at:
+> ❗ If this option doesn't work for your, you can edit the file manually at:
 >
 > - `~/.config/tuifeed/config.toml` on Linux
 > - `/Users/$USER/Library/Application\ Support/tuifeed/config.toml` on MacOS
@@ -109,9 +112,14 @@ then you can add new sources as follows:
 
 ```toml
 [sources]
-Il_Post_Mondo = "https://www.ilpost.it/mondo/feed/"
-Il_Post_Italia = "https://www.ilpost.it/italia/feed/"
-New_York_Times = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+"Corriere Della Sera" = "http://xml2.corriereobjects.it/rss/homepage.xml"
+"Dev.to" = "https://dev.to/feed/"
+"Hacker News" = "https://hnrss.org/newest"
+"Il Piccolo" = "https://ilpiccolo.gelocal.it/rss/finegil/ilpiccolo/feed.rss"
+"Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"
+"Il Post (Italia)" = "https://www.ilpost.it/italia/feed/"
+"Messaggero Veneto" = "https://messaggeroveneto.gelocal.it/rss/finegil/messaggeroveneto/feed.rss"
+"New York Times" = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
 ```
 
 so for each feed you want to read from, you must put an entry with a key, which identifies the **Name** of the source as it'll be displayed in the UI associated to the URL of the feed.
@@ -123,7 +131,18 @@ Once you're done with configuration, save, close and enjoy tuifeed 😄
 
 ## Keybindings ⌨️
 
-TBD
+| Key                              | Where                           | Description                                         |
+|----------------------------------|---------------------------------|-----------------------------------------------------|
+| Tab, Right                       | Feed list                       | Move to article list                                |
+| Up, Down, PageUp, PageDown       | Feed list, article list         | Scroll up/down in list                              |
+| Home, End                        | Feed list, article list         | Go to the beginning/end of the list                 |
+| Tab, Left                        | Article list                    | Move to feed list                                   |
+| Right                            | Article list                    | Move to article summary                             |
+| Left                             | Article summary                 | Move to article list                                |
+| Up, Down, PageUp, PageDown       | Article summary                 | Scroll up/down in summary                           |
+| Home, End                        | Article summary                 | Go to the beginning/end of summary                  |
+| Enter                            | Article summary, article link   | Open selected article url in your favourite browser |
+| Esc                              | *                               | Quit tuifeed                                        |
 
 ---
 
@@ -153,7 +172,6 @@ You can make a donation with one of these platforms:
 Contributions, bug reports, new features and questions are welcome! 😉
 If you have any question or concern, or you want to suggest a new feature, or you want just want to improve tuifeed, feel free to open an issue or a PR.
 
-TODO: contributing
 Please follow [our contributing guidelines](CONTRIBUTING.md)
 
 ---

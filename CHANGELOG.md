@@ -5,9 +5,8 @@
 
 ---
 
-
 ## 0.1.0
 
-Released on FIXME:/04/2021
+Released on 15/11/2021
 
 - First release

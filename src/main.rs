@@ -95,8 +95,7 @@ fn main() {
             exit(255);
         }
     };
-    let mut ui = Ui::new(config, args.ticks);
-    ui.run();
+    Ui::new(config, args.ticks).run();
 }
 
 /// ### edit_config_file

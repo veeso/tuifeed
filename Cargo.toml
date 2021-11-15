@@ -1,7 +1,7 @@
 [package]
 authors = ["Christian Visintin"]
 categories = ["command-line-utilities"]
-description = "a terminal feed reader with a fancy ui"
+description = "A terminal feed reader with a fancy ui"
 documentation = "https://docs.rs/tuifeed"
 edition = "2021"
 homepage = "https://veeso.github.io/tuifeed/"

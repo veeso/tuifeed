@@ -82,7 +82,7 @@ tuifeed is a news feed reader with a fancy terminal user interface. It allows yo
 You can directly install tuifeed with this simple shell script
 
 ```sh
-curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/JBhDb" | sh
+curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 ```
 
 Otherwise you can opt to install tuifeed with cargo:
@@ -136,6 +136,8 @@ Once you're done with configuration, save, close and enjoy tuifeed 😄
 | Tab, Right                       | Feed list                       | Move to article list                                |
 | Up, Down, PageUp, PageDown       | Feed list, article list         | Scroll up/down in list                              |
 | Home, End                        | Feed list, article list         | Go to the beginning/end of the list                 |
+| R                                | Feed list                       | Reload selected source                              |
+| CTRL+R                           | Feed list                       | Reload all sources                                  |
 | Tab, Left                        | Article list                    | Move to feed list                                   |
 | Right                            | Article list                    | Move to article summary                             |
 | Left                             | Article summary                 | Move to article list                                |

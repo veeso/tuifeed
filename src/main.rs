@@ -95,6 +95,12 @@ fn main() {
             exit(255);
         }
     };
+    // Check if configured
+    if config.sources.is_empty() {
+        eprintln!("tuifeed must be configured first. Run `tuifeed -c`");
+        exit(255);
+    }
+    // Run ui
     Ui::new(config, args.ticks).run();
 }
 

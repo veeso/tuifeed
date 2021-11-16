@@ -58,6 +58,7 @@
 
 - [tuifeed](#tuifeed)
   - [About tuifeed 📰](#about-tuifeed-)
+    - [Features 🎁](#features-)
   - [Get started 🏁](#get-started-)
     - [Installation 🚀](#installation-)
       - [Shell script 🖥️](#shell-script-️)
@@ -78,6 +79,14 @@
 tuifeed is a news feed reader with a fancy terminal user interface. It allows you read news from your favourite RSS and Atom sources, which can be easily configured in a TOML file.
 
 ![Demo](/docs/images/demo.gif)
+
+### Features 🎁
+
+- 📰 Read feed from any RSS/Atom source
+- 🌐 Open any article in your favourite browser in one-click
+- 🐧 Compatible with Windows, Linux, *BSD and MacOS
+- 🤖 Easy setup
+- 🦀 Rust-powered
 
 ---
 

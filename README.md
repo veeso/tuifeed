@@ -103,7 +103,7 @@ curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 You can install tuifeed on Windows with [Chocolatey](https://chocolatey.org/):
 
 ```ps1
-choco install termscp
+choco install tuifeed
 ```
 
 ### Cargo installation 📦

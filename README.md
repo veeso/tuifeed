@@ -59,6 +59,9 @@
 - [tuifeed](#tuifeed)
   - [About tuifeed 📰](#about-tuifeed-)
   - [Get started 🏁](#get-started-)
+    - [Shell script 🖥️](#shell-script-️)
+    - [Windows users 🍫](#windows-users-)
+    - [Cargo installation 📦](#cargo-installation-)
     - [Configure your news feed](#configure-your-news-feed)
   - [Keybindings ⌨️](#keybindings-️)
   - [Support the developer ☕](#support-the-developer-)
@@ -79,16 +82,36 @@ tuifeed is a news feed reader with a fancy terminal user interface. It allows yo
 
 ## Get started 🏁
 
-You can directly install tuifeed with this simple shell script
+### Shell script 🖥️
+
+You can directly install tuifeed with this simple shell script:
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 ```
 
-Otherwise you can opt to install tuifeed with cargo:
+⚠️ this method is supported for the following operating systems:
+
+- 🐧 **GNU/Linux**
+- 🍎 **MacOS**
+- 🚩 **NetBSD**
+
+> ❗ If you don't trust the script, you can view its content [on Github](https://github.com/veeso/tuifeed/blob/main/install.sh)
+
+### Windows users 🍫
+
+You can install tuifeed on Windows with [Chocolatey](https://chocolatey.org/):
+
+```ps1
+choco install termscp
+```
+
+### Cargo installation 📦
+
+You can opt to install tuifeed with Cargo:
 
 ```sh
-cargo install tuifeed
+cargo install --locked tuifeed
 ```
 
 ### Configure your news feed

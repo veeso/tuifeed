@@ -182,7 +182,14 @@ confirm() {
 # Installers
 
 install_on_bsd() {
-    try_with_cargo "packages for freeBSD are distribuited no more. Only cargo installations are supported."
+    # Net BSD users
+    if has pkgin; then
+        info "Detected pkgin on your NetBSD system. Installing tuifeed with pkgin"
+        pkgin install tuifeed
+    else
+        info "There's no available package for your *BSD distro. Installing tuifeed with cargo..."
+        try_with_cargo "There's no suitable installation method for your operating system."
+    fi
 }
 
 install_on_arch_linux() {

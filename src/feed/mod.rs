@@ -82,11 +82,13 @@ impl From<RssFeed> for Feed {
 impl From<RssEntry> for Article {
     fn from(entry: RssEntry) -> Self {
         Self {
-            title: entry.title.map(|x| x.content),
+            title: entry
+                .title
+                .map(|x| str_helpers::strip_html(x.content.as_str())),
             authors: entry.authors.into_iter().map(|x| x.name).collect(),
             summary: entry
                 .summary
-                .map(|x| str_helpers::strip_html_tags(x.content.as_str()))
+                .map(|x| str_helpers::strip_html(x.content.as_str()))
                 .unwrap_or_default(),
             url: entry
                 .links

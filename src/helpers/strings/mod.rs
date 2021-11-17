@@ -25,11 +25,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+mod lookup;
+
 use regex::Regex;
 use unicode_truncate::UnicodeTruncateStr;
 
 lazy_static! {
     static ref HTML_TAG_REGEX: Regex = Regex::new(r"<[^>]+>").unwrap();
+    /**
+     * Matches HTML entities in string
+     *
+     * - group 2: decimal (maybe)
+     * - group 3: literal (e.g. amp, gt, ...) (maybe)
+     */
+    static ref HTML_ENTITIES_REGEX: Regex = Regex::new(r"&(#([0-9]+))?([a-z]+)?;").unwrap();
     static ref REPEATED_NEWLINES_REGEX: Regex = Regex::new(r"(\r?\n|\r)\d*(\r?\n|\r)").unwrap();
 }
 
@@ -51,18 +60,31 @@ pub fn replace_multiple_newlines(s: &str, with: &str) -> String {
     REPEATED_NEWLINES_REGEX.replace_all(s, with).to_string()
 }
 
-/// strip_html_tags
+/// strip_html
 ///
-/// Strip html tags from string
-pub fn strip_html_tags(s: &str) -> String {
-    HTML_TAG_REGEX
-        .replace_all(s, "")
-        .to_string()
-        .replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
+/// Strip html tags and entities from string
+pub fn strip_html(s: &str) -> String {
+    let mut escaped = HTML_TAG_REGEX.replace_all(s, "").to_string();
+    let copy = escaped.clone();
+    for group in HTML_ENTITIES_REGEX.captures_iter(copy.as_str()) {
+        if let Some(mtch) = group.get(2) {
+            // Convert mtch to u32
+            let replace_with = match u32::from_str_radix(mtch.as_str(), 10) {
+                Err(_) => '�',
+                Ok(val) => char::from_u32(val).unwrap_or('�'),
+            };
+            // Get char from decimal
+            escaped = escaped.replace(&group[0], replace_with.to_string().as_str());
+        } else if let Some(mtch) = group.get(3) {
+            let replace_with = lookup::HTML_ENTITIES_TABLE
+                .iter()
+                .find(|(repr, _)| *repr == mtch.as_str())
+                .map(|(_, code)| code)
+                .unwrap_or(&"�");
+            escaped = escaped.replace(&group[0], replace_with);
+        }
+    }
+    escaped
 }
 
 #[cfg(test)]
@@ -94,12 +116,16 @@ mod test {
     }
 
     #[test]
-    fn should_strip_html_tags() {
+    fn should_strip_html() {
         assert_eq!(
-            strip_html_tags(
+            strip_html(
                 r#"<p><img src="https://images2.corriereobjects.it/methode_image/2021/11/09/Cultura/Foto%20Cltura%20-%20Trattate/Il%20salvataggio%20delle%20vacche%20bis-kWoC-U3300981161016RfG-656x492@Corriere-Web-Sezioni.jpg" title="Polesine, novembre 1951,settant’anni fa l’alluvione che travolse il Veneto" alt="Polesine, novembre 1951 />Hello</p> World!"#
             ),
             "Hello World!"
+        );
+        assert_eq!(
+            strip_html(r#"Hello, &lt;World&gt;&#33;"#),
+            "Hello, <World>!"
         );
     }
 

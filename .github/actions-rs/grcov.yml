@@ -9,3 +9,4 @@ ignore:
   - "src/ui/*"
   - src/main.rs
   - src/helpers/open.rs
+  - src/helpers/strings/lookup.rs

@@ -69,7 +69,7 @@ pub fn strip_html(s: &str) -> String {
     for group in HTML_ENTITIES_REGEX.captures_iter(copy.as_str()) {
         if let Some(mtch) = group.get(2) {
             // Convert mtch to u32
-            let replace_with = match u32::from_str_radix(mtch.as_str(), 10) {
+            let replace_with = match mtch.as_str().parse::<u32>() {
                 Err(_) => '�',
                 Ok(val) => char::from_u32(val).unwrap_or('�'),
             };

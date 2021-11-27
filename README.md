@@ -1,8 +1,13 @@
 # tuifeed
 
+<p align="center">
+  <img src="/docs/images/tuifeed.svg" width="256" height="256" />
+</p>
+
+<p align="center">~ A terminal news feed reader with a fancy ui ~</p>
+
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
 <p align="center">Current version: 0.1.1 (17/11/2021)</p>
-<p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"

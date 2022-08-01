@@ -1,5 +1,5 @@
 [package]
-authors = ["Christian Visintin"]
+authors = ["Christian Visintin <christian.visintin1997@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "A terminal feed reader with a fancy ui"
 documentation = "https://docs.rs/tuifeed"
@@ -11,30 +11,30 @@ license = "MIT"
 name = "tuifeed"
 readme = "README.md"
 repository = "https://github.com/veeso/tuifeed"
-version = "0.1.1"
+version = "0.2.0"
 
 [[bin]]
 name = "tuifeed"
 path = "src/main.rs"
 
 [dependencies]
-argh = "0.1.6"
+argh = "0.1.8"
 chrono = "0.4.19"
-crossterm = "0.20"
+crossterm = "^0.24"
 dirs = "4.0.0"
-feed-rs = "^1.0.0"
-lazy_static = "^1.0.0"
-open = "2.0.1"
-regex = "1.5.4"
+feed-rs = "^1.1.0"
+lazy-regex = "2.3.0"
+lazy_static = "1.4.0"
+open = "3.0.2"
 serde = { version = "^1.0.0", features = [ "derive" ] }
 thiserror = "^1.0.0"
-toml = "0.5.8"
+toml = "0.5.9"
 tuirealm = "^1.0.0"
 tui-realm-stdlib = "^1.0.0"
 unicode-truncate = "^0.2.0"
-ureq = { version = "2.3.0", features = [ "tls" ] }
+ureq = { version = "2.5.0", features = [ "tls" ] }
 
 [dev-dependencies]
 pretty_assertions = "^0.7.2"
 serial_test = "^0.5.1"
-tempfile = "^3.1.0"
+tempfile = "^3.3.0"

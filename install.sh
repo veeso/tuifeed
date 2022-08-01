@@ -8,7 +8,7 @@
 #   -f, -y, --force, --yes
 #     Skip the confirmation prompt during installation
 
-TUIFEED_VERSION="0.1.1"
+TUIFEED_VERSION="0.2.0"
 GITHUB_URL="https://github.com/veeso/tuifeed/releases/download/v${TUIFEED_VERSION}"
 DEB_URL="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_amd64.deb"
 RPM_URL="${GITHUB_URL}/tuifeed-${TUIFEED_VERSION}-1.x86_64.rpm"

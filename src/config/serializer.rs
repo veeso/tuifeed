@@ -6,8 +6,6 @@ use serde::de::DeserializeOwned;
 use std::io::Read;
 use thiserror::Error;
 
-/// ## SerializerError
-///
 /// Contains the error for serializer/deserializer
 #[derive(Debug)]
 pub struct SerializerError {
@@ -15,8 +13,6 @@ pub struct SerializerError {
     msg: String,
 }
 
-/// ## SerializerErrorKind
-///
 /// Describes the kind of error for the serializer/deserializer
 #[derive(Error, Debug)]
 pub enum SerializerErrorKind {
@@ -27,8 +23,6 @@ pub enum SerializerErrorKind {
 }
 
 impl SerializerError {
-    /// ### new
-    ///
     /// Instantiates a new `SerializerError` with description message
     pub fn new(kind: SerializerErrorKind, msg: String) -> SerializerError {
         SerializerError { kind, msg }
@@ -41,8 +35,6 @@ impl std::fmt::Display for SerializerError {
     }
 }
 
-/// ### deserialize
-///
 /// Read data from readable and deserialize its content as TOML
 pub fn deserialize<R, S>(mut readable: R) -> Result<S, SerializerError>
 where

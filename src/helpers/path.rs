@@ -5,8 +5,6 @@
 use super::file as file_helper;
 use std::path::{Path, PathBuf};
 
-/// ### get_config_dir
-///
 /// Get tuifeed configuration directory path.
 /// Returns None, if it's not possible to get it
 pub fn init_config_dir() -> Result<Option<PathBuf>, String> {
@@ -37,8 +35,6 @@ pub fn init_config_dir() -> Result<Option<PathBuf>, String> {
     }
 }
 
-/// ### get_config_path
-///
 /// Returns path for config file.
 /// If the file doesn't exist, it will initialize it
 pub fn get_config_file(config_dir: &Path) -> Result<PathBuf, String> {
@@ -52,8 +48,6 @@ pub fn get_config_file(config_dir: &Path) -> Result<PathBuf, String> {
     Ok(cfg_file)
 }
 
-/// ### init_config_file
-///
 /// Initialize configuration file
 fn init_config_file(p: &Path) -> Result<(), String> {
     file_helper::write_file(

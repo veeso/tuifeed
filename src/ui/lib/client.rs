@@ -13,16 +13,12 @@ pub struct FeedClient {
 }
 
 impl FeedClient {
-    /// ### fetch
-    ///
     /// Fetch source.
     /// Panics if fails to send request
     pub fn fetch(&mut self, name: &str, uri: &str) {
         self.workers.push(WorkerThread::start(name, uri));
     }
 
-    /// ### poll
-    ///
     /// Poll receiver for fetch results.
     /// Panics if fails to poll
     pub fn poll(&mut self) -> Option<(String, FeedResult<Feed>)> {
@@ -40,8 +36,6 @@ impl FeedClient {
         None
     }
 
-    /// ### running
-    ///
     /// Returns whether client has running workers
     pub fn running(&self) -> bool {
         !self.workers.is_empty()
@@ -62,15 +56,11 @@ impl Drop for FeedClient {
 
 // -- worker thread
 
-/// ## WorkerThread
-///
 /// Thread holder for worker
 #[derive(Debug)]
 struct WorkerThread(Arc<RwLock<bool>>, JoinHandle<(String, FeedResult<Feed>)>);
 
 impl WorkerThread {
-    /// ### start
-    ///
     /// Start a new worker thread
     pub fn start(name: &str, uri: &str) -> Self {
         let completed = Arc::new(RwLock::new(false));
@@ -81,8 +71,6 @@ impl WorkerThread {
         Self(completed, thread)
     }
 
-    /// ### is_joinable
-    ///
     /// Returns whether thread is joinable
     pub fn is_joinable(&self) -> bool {
         if let Ok(lock) = self.0.read() {
@@ -91,8 +79,6 @@ impl WorkerThread {
         true
     }
 
-    /// ### join
-    ///
     /// Join thread and consume worker.
     /// Returns thread product
     pub fn join(self) -> (String, FeedResult<Feed>) {
@@ -102,8 +88,6 @@ impl WorkerThread {
 
 // -- worker
 
-/// ## Worker
-///
 /// Worker thread which fetches async the feed sources
 pub struct Worker {
     completed: Arc<RwLock<bool>>,
@@ -120,8 +104,6 @@ impl Worker {
         }
     }
 
-    /// ### run
-    ///
     /// Run function for worker
     pub fn run(&mut self) -> (String, FeedResult<Feed>) {
         // Set running to false

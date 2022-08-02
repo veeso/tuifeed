@@ -6,13 +6,9 @@ use feed_rs::parser::ParseFeedError;
 use thiserror::Error;
 use ureq::Error as RequestError;
 
-/// ## FeedResult
-///
 /// A result returned by the feed client
 pub type FeedResult<T> = Result<T, FeedError>;
 
-/// ## FeedError
-///
 /// Describes a feed error
 #[derive(Debug, Error, PartialEq)]
 pub enum FeedError {

@@ -6,15 +6,11 @@ use super::{Feed, FeedError, FeedResult};
 use feed_rs::parser as feed_parser;
 use std::io::Read;
 
-/// ## Client
-///
 /// RSS client. Fetches its sources to retrieve all the required Feeds
 #[derive(Default)]
 pub struct Client;
 
 impl Client {
-    /// ### fetch_source
-    ///
     /// Fetch a single source from remote
     pub fn fetch(&self, source: &str) -> FeedResult<Feed> {
         let body = self.get_feed(source)?;
@@ -23,15 +19,11 @@ impl Client {
 
     // -- private
 
-    /// ### get_feed
-    ///
     /// Get feed via HTTP GET request
     fn get_feed(&self, source: &str) -> FeedResult<impl Read + Send> {
         Ok(ureq::get(source).call()?.into_reader())
     }
 
-    /// ### parse_feed
-    ///
     /// Parse feed from HTTP response
     fn parse_feed<R: Read>(&self, response: R) -> FeedResult<Feed> {
         feed_parser::parse(response)

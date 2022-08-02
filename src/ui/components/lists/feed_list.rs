@@ -41,8 +41,6 @@ impl OwnStates {
     }
 }
 
-/// ## FeedList
-///
 /// A list which prepends the fetch state for each source for the feed
 pub struct FeedList {
     list: List,

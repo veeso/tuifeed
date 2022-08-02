@@ -17,8 +17,6 @@ static HTML_TAG_REGEX: Lazy<Regex> = lazy_regex!(r"<[^>]+>");
 static HTML_ENTITIES_REGEX: Lazy<Regex> = lazy_regex!(r"&(#([0-9]+))?([a-z]+)?;");
 static REPEATED_NEWLINES_REGEX: Lazy<Regex> = lazy_regex!(r"(\r?\n|\r)\d*(\r?\n|\r)");
 
-/// ### elide_string_at
-///
 /// Elide string at `len` and append `
 pub fn elide_string_at(s: &str, len: usize) -> String {
     if s.len() < len {
@@ -28,8 +26,6 @@ pub fn elide_string_at(s: &str, len: usize) -> String {
     }
 }
 
-/// ### replace_multiple_newlines
-///
 /// Remove repeated newlines in string and replace them with `with`
 pub fn replace_multiple_newlines(s: &str, with: &str) -> String {
     REPEATED_NEWLINES_REGEX.replace_all(s, with).to_string()

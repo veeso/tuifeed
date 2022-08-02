@@ -17,16 +17,12 @@ use chrono::{DateTime, Local};
 use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
 use std::slice::Iter;
 
-/// ## Feed
-///
 /// Contains, for a feed source, the list of articles fetched from remote
 #[derive(Debug, Clone, PartialEq)]
 pub struct Feed {
     pub(crate) articles: Vec<Article>,
 }
 
-/// ## Article
-///
 /// identifies a single article in the feed
 #[derive(Debug, Clone, PartialEq)]
 pub struct Article {
@@ -38,8 +34,6 @@ pub struct Article {
 }
 
 impl Feed {
-    /// ### articles
-    ///
     /// Get an iterator over articles
     pub fn articles(&self) -> Iter<'_, Article> {
         self.articles.iter()

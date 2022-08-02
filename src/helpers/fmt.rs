@@ -4,8 +4,6 @@
 
 use chrono::{DateTime, Local};
 
-/// ### format_datetime
-///
 /// Format datetime according to provided format
 pub fn format_datetime(datetime: DateTime<Local>, fmt: &str) -> String {
     datetime.format(fmt).to_string()

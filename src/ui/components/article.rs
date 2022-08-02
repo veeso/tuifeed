@@ -127,8 +127,6 @@ impl ArticleSummary {
         }
     }
 
-    /// ### make_summary_rows
-    ///
     /// Make summary rows
     fn make_summary_rows(summary: &str) -> Vec<TextSpan> {
         let summary =

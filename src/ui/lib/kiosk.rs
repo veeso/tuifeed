@@ -6,8 +6,6 @@ use crate::feed::{Feed, FeedError};
 
 use std::collections::HashMap;
 
-/// ## Kiosk
-///
 /// Describes the current feed holder.
 /// It contains different sources, each one with its own feed fetch state
 #[derive(Debug, Default)]
@@ -16,8 +14,6 @@ pub struct Kiosk {
     feed: HashMap<String, FeedState>,
 }
 
-/// ## FeedState
-///
 /// Describes the current feed state for a source.
 #[derive(Debug, PartialEq)]
 pub enum FeedState {
@@ -29,8 +25,6 @@ pub enum FeedState {
     Loading,
 }
 
-/// ## FlatFeedState
-///
 /// Describes the current feed state without containing the object
 #[derive(Debug, PartialEq)]
 pub enum FlatFeedState {
@@ -43,15 +37,11 @@ pub enum FlatFeedState {
 }
 
 impl Kiosk {
-    /// ### insert_feed
-    ///
     /// Insert a feed into kiosk
     pub fn insert_feed<S: AsRef<str>>(&mut self, source: S, state: FeedState) {
         self.feed.insert(source.as_ref().to_string(), state);
     }
 
-    /// ### get_state
-    ///
     /// Returns the list of sources associated to their feed list
     pub fn get_state(&self) -> Vec<(String, FlatFeedState)> {
         self.feed
@@ -60,15 +50,11 @@ impl Kiosk {
             .collect()
     }
 
-    /// ### get_feed_state
-    ///
     /// Get current feed state
     pub fn get_feed_state(&self, source: &str) -> Option<&FeedState> {
         self.feed.get(source)
     }
 
-    /// ### get_feed
-    ///
     /// Get feed from kiosk.
     /// Feed is returned only if source exists and if the current feed state is `Success`
     pub fn get_feed(&self, source: &str) -> Option<&Feed> {
@@ -79,8 +65,6 @@ impl Kiosk {
         }
     }
 
-    /// ### sources
-    ///
     /// Get sources in kiosk
     pub fn sources(&self) -> Vec<&String> {
         self.feed.keys().into_iter().collect()

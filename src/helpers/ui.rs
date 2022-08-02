@@ -27,8 +27,6 @@
  */
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 
-/// ### draw_area_in
-///
 /// Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()

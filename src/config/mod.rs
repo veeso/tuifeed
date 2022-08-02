@@ -7,8 +7,6 @@ pub mod serializer;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// ## Config
-///
 /// tuifeed configuration
 #[derive(Deserialize, Debug, Default)]
 pub struct Config {

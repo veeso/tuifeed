@@ -81,8 +81,6 @@ fn main() {
     Ui::init(config, args.ticks).run();
 }
 
-/// ### edit_config_file
-///
 /// Edit configuration file
 fn edit_config_file() -> Result<(), String> {
     if let Some(p) = get_config_file() {
@@ -97,8 +95,6 @@ fn edit_config_file() -> Result<(), String> {
     }
 }
 
-/// ### init_config
-///
 /// Initialize configuration
 fn init_config() -> Result<Config, String> {
     let config_dir = path_helpers::init_config_dir()?;
@@ -112,8 +108,6 @@ fn init_config() -> Result<Config, String> {
     config_serializer::deserialize(config_file).map_err(|e| e.to_string())
 }
 
-/// ### get_config_file
-///
 /// Get configuration file path
 fn get_config_file() -> Option<PathBuf> {
     let config_dir = match path_helpers::init_config_dir() {

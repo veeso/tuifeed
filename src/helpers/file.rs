@@ -6,15 +6,11 @@ use std::fs::File;
 use std::io::{Error as IoError, Read, Write};
 use std::path::Path;
 
-/// ### open_file_read
-///
 /// Open file at `p` for read
 pub fn open_file_read(p: &Path) -> Result<impl Read, IoError> {
     File::open(p)
 }
 
-/// ### write_file
-///
 /// Write `content` to file located at `p`
 pub fn write_file(p: &Path, content: &str) -> Result<(), IoError> {
     File::create(p)?.write_all(content.as_bytes())

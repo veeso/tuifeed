@@ -266,13 +266,19 @@ install_on_linux() {
 
 install_on_macos() {
     if has brew; then
+        # get homebrew formula name
+        if [ "${ARCH}" == "x86_64" ]; then
+            FORMULA="termscp"
+        else
+            FORMULA="termscp-m1"
+        fi
         if has tuifeed; then
             info "Upgrading ${GREEN}tuifeed${NO_COLOR}…"
             # The OR is used since someone could have installed via cargo previously
-            brew update && brew upgrade tuifeed || brew install veeso/tuifeed/tuifeed
+            brew update && brew upgrade ${FORMULA} || brew install veeso/tuifeed/${FORMULA}
         else
             info "Installing ${GREEN}tuifeed${NO_COLOR}…"
-            brew install veeso/tuifeed/tuifeed
+            brew install veeso/tuifeed/${FORMULA}
         fi
     else
         try_with_cargo "brew is missing on your system; please install it from <https://brew.sh/>"

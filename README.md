@@ -101,8 +101,6 @@ tuifeed is a news feed reader with a fancy terminal user interface. It allows yo
 
 #### Shell script 🖥️
 
-You can directly install tuifeed with this simple shell script:
-
 ```sh
 curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 ```
@@ -113,19 +111,17 @@ curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 - 🍎 **MacOS**
 - 🚩 **NetBSD**
 
-> ❗ If you don't trust the script, you can view its content [on Github](https://github.com/veeso/tuifeed/blob/main/install.sh)
+> 🔴 If you don't trust the script, you can view its content [on Github](https://github.com/veeso/tuifeed/blob/main/install.sh)
 
 #### Windows users 🍫
 
-You can install tuifeed on Windows with [Chocolatey](https://chocolatey.org/):
+Install via [Chocolatey](https://chocolatey.org/):
 
 ```ps1
 choco install tuifeed
 ```
 
 #### Cargo installation 📦
-
-You can opt to install tuifeed with Cargo:
 
 ```sh
 cargo install --locked tuifeed
@@ -145,9 +141,9 @@ tuifeed -c
 
 this will open the configuration file in your favourite editor.
 
-> ❗ If this option doesn't work for your, you can edit the file manually at:
+> 💡 If this option doesn't work for your, you can edit the file manually at:
 >
-> - `~/.config/tuifeed/config.toml` on Linux
+> - `$XDG_CONFIG_HOME/tuifeed/config.toml` on Linux
 > - `/Users/$USER/Library/Application\ Support/tuifeed/config.toml` on MacOS
 
 then you can add new sources as follows:
@@ -166,7 +162,7 @@ then you can add new sources as follows:
 
 so for each feed you want to read from, you must put an entry with a key, which identifies the **Name** of the source as it'll be displayed in the UI associated to the URL of the feed.
   
-> 🪄 If you want to use special characters in toml you can quote the key name:
+> 💡 If you want to use special characters in toml you can quote the key name:
 > `"Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"`
 
 Once you're done with configuration, save, close and enjoy tuifeed 😄

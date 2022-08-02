@@ -77,7 +77,7 @@ fn content_or_summary(entry: &RssEntry) -> String {
         .as_ref()
         .and_then(|x| x.body.as_ref().map(|x| str_helpers::strip_html(x)))
         .unwrap_or_default();
-    if content.trim().is_empty() {
+    if content.trim_matches('\n').trim().is_empty() {
         // get summary instead
         entry
             .summary

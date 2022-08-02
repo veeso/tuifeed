@@ -31,6 +31,7 @@ thiserror = "^1.0.0"
 toml = "0.5.9"
 tuirealm = "^1.7.0"
 tui-realm-stdlib = "^1.1.0"
+tui-realm-textarea = "^1.1.0"
 unicode-truncate = "^0.2.0"
 ureq = { version = "2.5.0", features = [ "tls" ] }
 

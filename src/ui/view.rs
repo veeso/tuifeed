@@ -13,23 +13,27 @@ use tuirealm::{
     SubEventClause,
 };
 
+static mut SUMMARY_WIDTH: usize = 0;
+
 /// Article view components
-struct ArticleView {
+struct ArticleView<'a> {
     authors: ArticleAuthors,
     date: ArticleDate,
     link: ArticleLink,
-    summary: ArticleSummary,
+    summary: ArticleSummary<'a>,
     title: ArticleTitle,
 }
 
-impl From<&Article> for ArticleView {
+impl<'a> From<&Article> for ArticleView<'a> {
     fn from(article: &Article) -> Self {
-        Self {
-            authors: ArticleAuthors::new(article.authors.as_ref()),
-            date: ArticleDate::new(article.date),
-            link: ArticleLink::new(article.url.as_str()),
-            summary: ArticleSummary::new(article.summary.as_str()),
-            title: ArticleTitle::new(article.title.as_deref().unwrap_or("")),
+        unsafe {
+            Self {
+                authors: ArticleAuthors::new(article.authors.as_ref()),
+                date: ArticleDate::new(article.date),
+                link: ArticleLink::new(article.url.as_str()),
+                summary: ArticleSummary::new(article.summary.as_str(), SUMMARY_WIDTH),
+                title: ArticleTitle::new(article.title.as_deref().unwrap_or("")),
+            }
         }
     }
 }
@@ -114,6 +118,10 @@ impl Ui {
                     .view(&Id::ArticleAuthors, f, second_article_row[0]);
                 self.application
                     .view(&Id::ArticleDate, f, second_article_row[1]);
+                // Update summary width
+                unsafe {
+                    SUMMARY_WIDTH = (article_chunks[2].width as usize).saturating_sub(4);
+                }
                 self.application
                     .view(&Id::ArticleSummary, f, article_chunks[2]);
                 self.application

@@ -868,6 +868,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "tui-realm-textarea"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "409f433b29dd7c846cde923d2d9ddb8d1ba2d96915143cdd994a13b99cd197d2"
+dependencies = [
+ "lazy-regex",
+ "tui-textarea",
+ "tuirealm",
+]
+
+[[package]]
+name = "tui-textarea"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a9b41afefbaf2c2e9628758b2862caf791898daedbe1773d151e3d0279286c3"
+dependencies = [
+ "crossterm 0.23.2",
+ "tui",
+]
+
+[[package]]
 name = "tuifeed"
 version = "0.2.0"
 dependencies = [
@@ -886,6 +907,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tui-realm-stdlib",
+ "tui-realm-textarea",
  "tuirealm",
  "unicode-truncate",
  "ureq",

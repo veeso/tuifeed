@@ -23,14 +23,9 @@ pub const FEED_STATE_ERROR: u8 = 1;
 pub const FEED_STATE_LOADING: u8 = 2;
 pub const FEED_STATE_SUCCESS: u8 = 0;
 
+#[derive(Default)]
 struct OwnStates {
     step: usize,
-}
-
-impl Default for OwnStates {
-    fn default() -> Self {
-        Self { step: 0 }
-    }
 }
 
 impl OwnStates {

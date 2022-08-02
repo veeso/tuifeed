@@ -52,15 +52,13 @@ impl From<RssFeed> for Feed {
 
 impl From<RssEntry> for Article {
     fn from(entry: RssEntry) -> Self {
+        let content_or_summary = content_or_summary(&entry);
         Self {
             title: entry
                 .title
                 .map(|x| str_helpers::strip_html(x.content.as_str())),
             authors: entry.authors.into_iter().map(|x| x.name).collect(),
-            summary: entry
-                .summary
-                .map(|x| str_helpers::strip_html(x.content.as_str()))
-                .unwrap_or_default(),
+            summary: content_or_summary,
             url: entry
                 .links
                 .get(0)
@@ -68,6 +66,26 @@ impl From<RssEntry> for Article {
                 .unwrap_or(entry.id),
             date: entry.updated.map(DateTime::<Local>::from),
         }
+    }
+}
+
+/// This function returns content if any, otherwise the summary of the article.
+/// The reason is that content is USUALLY the entire article, BUT sometimes is not filled, so summary is preferred in these cases
+fn content_or_summary(entry: &RssEntry) -> String {
+    let content = entry
+        .content
+        .as_ref()
+        .and_then(|x| x.body.as_ref().map(|x| str_helpers::strip_html(x)))
+        .unwrap_or_default();
+    if content.trim().is_empty() {
+        // get summary instead
+        entry
+            .summary
+            .as_ref()
+            .map(|x| str_helpers::strip_html(x.content.as_str()))
+            .unwrap_or_default()
+    } else {
+        content
     }
 }
 

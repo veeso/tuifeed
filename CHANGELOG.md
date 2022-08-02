@@ -14,6 +14,7 @@ Released on ??
 - If `content` in RSS feed is populated, use content instead of `summary`
   - This should be preferred since contains much more information than just the summary. Unfortunately sometimes the content is empty, so summary should be used as fallback
 - Changed stdlib `Textarea` to `tui-realm-textarea` component to improve readability of summary
+- Fixed the article date shown: was `updated` but should be `published`
 - Migrated UI to tui-realm 1.7.0
 - Updated dependencies
   - argh `0.1.8`

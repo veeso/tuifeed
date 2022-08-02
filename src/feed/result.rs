@@ -58,7 +58,7 @@ mod test {
                 404,
                 Response::new(404, "not found", "").ok().unwrap()
             )),
-            FeedError::Http(String::from(": status code 404"))
+            FeedError::Http(String::from("https://example.com/: status code 404"))
         );
     }
 

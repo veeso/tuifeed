@@ -268,9 +268,9 @@ install_on_macos() {
     if has brew; then
         # get homebrew formula name
         if [ "${ARCH}" == "x86_64" ]; then
-            FORMULA="termscp"
+            FORMULA="tuifeed"
         else
-            FORMULA="termscp-m1"
+            FORMULA="tuifeed-m1"
         fi
         if has tuifeed; then
             info "Upgrading ${GREEN}tuifeed${NO_COLOR}…"

@@ -7,7 +7,7 @@
 <p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.2.0 (17/11/2021)</p>
+<p align="center">Current version: 0.2.0 (05/08/2022)</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"
@@ -150,14 +150,13 @@ then you can add new sources as follows:
 
 ```toml
 [sources]
+"Cointelegraph" = "https://it.cointelegraph.com/rss"
 "Corriere Della Sera" = "http://xml2.corriereobjects.it/rss/homepage.xml"
-"Dev.to" = "https://dev.to/feed/"
-"Hacker News" = "https://hnrss.org/newest"
+"Friuli Oggi" = "https://www.friulioggi.it/feed/"
 "Il Piccolo" = "https://ilpiccolo.gelocal.it/rss/finegil/ilpiccolo/feed.rss"
 "Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"
 "Il Post (Italia)" = "https://www.ilpost.it/italia/feed/"
 "Messaggero Veneto" = "https://messaggeroveneto.gelocal.it/rss/finegil/messaggeroveneto/feed.rss"
-"New York Times" = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
 ```
 
 so for each feed you want to read from, you must put an entry with a key, which identifies the **Name** of the source as it'll be displayed in the UI associated to the URL of the feed.
@@ -194,6 +193,8 @@ You can make a donation with one of these platforms:
 
 [![ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/veeso)
 [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/chrisintin)
+[![bitcoin](https://img.shields.io/badge/Bitcoin-ff9416?style=for-the-badge&logo=bitcoin&logoColor=white)](https://btc.com/bc1qvlmykjn7htz0vuprmjrlkwtv9m9pan6kylsr8w)
+[![ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=Ethereum&logoColor=white)](https://etherscan.io/address/0xE57E761Aa806c9afe7e06Fb0601B17beC310f9c4)
 
 ---
 

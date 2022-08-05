@@ -9,7 +9,7 @@
 
 ## 0.2.0
 
-Released on ??
+Released on 05/08/2022
 
 - If `content` in RSS feed is populated, use content instead of `summary`
   - This should be preferred since contains much more information than just the summary. Unfortunately sometimes the content is empty, so summary should be used as fallback

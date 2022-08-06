@@ -14,7 +14,9 @@ cargo build --release
 # Make zip
 $zipName = "tuifeed-v$version-x86_64-pc-windows-msvc.zip"
 Set-Location .\target\release\
-Compress-Archive tuifeed.exe $zipName
+Compress-Archive -Force tuifeed.exe $zipName
 # Get checksum
-checksum.exe -t sha256 $zipName
+#checksum.exe -t sha256 $zipName
+Get-FileHash $zipName
 Move-Item $zipName .\..\..\dist\pkgs\windows\$zipName
+

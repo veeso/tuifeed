@@ -64,7 +64,10 @@ impl From<RssEntry> for Article {
                 .get(0)
                 .map(|x| x.href.clone())
                 .unwrap_or(entry.id),
-            date: entry.published.map(DateTime::<Local>::from),
+            date: entry
+                .published
+                .or(entry.updated)
+                .map(DateTime::<Local>::from),
         }
     }
 }

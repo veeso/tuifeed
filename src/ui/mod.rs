@@ -36,7 +36,7 @@ pub enum Id {
 }
 
 /// Messages produced by components
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Msg {
     ArticleBlur,
     ArticleChanged(usize),

@@ -22,7 +22,7 @@ mod test {
 
     #[test]
     fn should_format_datetime() {
-        let datetime: DateTime<Local> = SystemTime::from(SystemTime::UNIX_EPOCH)
+        let datetime: DateTime<Local> = SystemTime::UNIX_EPOCH
             .add(Duration::from_secs(36000))
             .into();
         assert_eq!(format_datetime(datetime, "%Y-%m-%d"), "1970-01-01");

@@ -15,7 +15,7 @@ pub struct Kiosk {
 }
 
 /// Describes the current feed state for a source.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FeedState {
     /// Feed loaded with success
     Success(Feed),
@@ -26,7 +26,7 @@ pub enum FeedState {
 }
 
 /// Describes the current feed state without containing the object
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum FlatFeedState {
     /// Feed loaded with success
     Success,

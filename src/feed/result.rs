@@ -10,7 +10,7 @@ use ureq::Error as RequestError;
 pub type FeedResult<T> = Result<T, FeedError>;
 
 /// Describes a feed error
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum FeedError {
     #[error("Parse error: {0}")]
     Parse(String),

@@ -18,13 +18,13 @@ use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
 use std::slice::Iter;
 
 /// Contains, for a feed source, the list of articles fetched from remote
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Feed {
     pub(crate) articles: Vec<Article>,
 }
 
 /// identifies a single article in the feed
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Article {
     pub title: Option<String>,
     pub authors: Vec<String>,

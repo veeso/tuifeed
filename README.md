@@ -70,6 +70,7 @@
       - [Windows users 🍫](#windows-users-)
       - [Cargo installation 📦](#cargo-installation-)
     - [Configure your news feed](#configure-your-news-feed)
+    - [Configure your display options](#configure-your-display-options)
   - [Keybindings ⌨️](#keybindings-️)
   - [Support the developer ☕](#support-the-developer-)
   - [Powered by 💪](#powered-by-)
@@ -165,6 +166,44 @@ so for each feed you want to read from, you must put an entry with a key, which 
 > `"Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"`
 
 Once you're done with configuration, save, close and enjoy tuifeed 😄
+
+### Configure your display options
+
+You can optionally configure some display options in the UI.
+
+To open the configuration file you can run
+
+```sh
+tuifeed -c
+```
+
+this will open the configuration file in your favourite editor.
+
+> 💡 If this option doesn't work for your, you can edit the file manually at:
+>
+> - `$XDG_CONFIG_HOME/tuifeed/config.toml` on Linux
+> - `/Users/$USER/Library/Application\ Support/tuifeed/config.toml` on MacOS
+
+Then you can configure the following keys
+
+```toml
+[article-title]
+show-author = false
+show-timestamp = true
+```
+
+- show-author: display the author name before the article title in the articles list
+- show-timestamp: display the timestamp before the article title in the articles list
+
+The key order in the article list name is:
+
+1. timestamp
+2. author
+3. title
+
+Once you're done with configuration, save, close and enjoy tuifeed 😄
+
+---
 
 ## Keybindings ⌨️
 

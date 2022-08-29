@@ -14,6 +14,13 @@
 Released on 29/08/2022
 
 - Show timestamp next to articles (can be configured)
+- Added new key `article-title` to configuration (optional)
+
+    ```toml
+    [article-title]
+    show-author = false
+    show-timestamp = true
+    ```
 
 ## 0.2.1
 

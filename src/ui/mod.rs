@@ -167,7 +167,8 @@ impl Ui {
             // Update feed list and initialize article
             self.update_feed_list_item(name.as_str(), flat_state);
             if self.is_article_list_empty() {
-                self.init_article();
+                let config = self.config.clone();
+                self.init_article(&config);
             }
             // Force redraw
             self.redraw = true;
@@ -241,7 +242,8 @@ impl Update<Msg> for Ui {
             Msg::FeedChanged(feed) => {
                 let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
                 if let Some(feed) = self.kiosk.get_feed(feed.as_str()) {
-                    let articles = self.get_article_list(feed, self.max_article_name_len());
+                    let articles =
+                        self.get_article_list(&self.config, feed, self.max_article_name_len());
                     assert!(self
                         .application
                         .remount(Id::ArticleList, Box::new(articles), vec![])

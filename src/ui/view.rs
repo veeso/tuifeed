@@ -1,4 +1,5 @@
 use super::{components::*, FlatFeedState, Id, Kiosk, Msg, Ui};
+use crate::config::Config;
 use crate::feed::{Article, Feed};
 use crate::helpers::strings as str_helpers;
 use crate::helpers::ui as ui_helpers;
@@ -220,14 +221,14 @@ impl Ui {
 
     /// Initialize article list entries and article.
     /// This function should be called only if article list is empty
-    pub(super) fn init_article(&mut self) {
+    pub(super) fn init_article(&mut self, config: &Config) {
         if let Some(source) = self.sorted_sources().get(0) {
             if let Some(feed) = self.kiosk.get_feed(source.as_str()) {
                 assert!(self
                     .application
                     .remount(
                         Id::ArticleList,
-                        Box::new(self.get_article_list(feed, self.max_article_name_len())),
+                        Box::new(self.get_article_list(config, feed, self.max_article_name_len())),
                         vec![]
                     )
                     .is_ok());
@@ -266,16 +267,39 @@ impl Ui {
     }
 
     /// Update the current article list
-    pub(super) fn get_article_list(&self, feed: &Feed, max_title_len: usize) -> ArticleList {
+    pub(super) fn get_article_list(
+        &self,
+        config: &Config,
+        feed: &Feed,
+        max_title_len: usize,
+    ) -> ArticleList {
         let articles: Vec<String> = feed
             .articles()
-            .filter_map(|x| {
-                x.title
-                    .as_ref()
-                    .map(|x| str_helpers::elide_string_at(x.as_str(), max_title_len))
-            })
+            .map(|x| Self::fmt_article_title_in_list(config, x, max_title_len))
             .collect();
         ArticleList::new(articles.as_slice())
+    }
+
+    /// Format article title in articles list
+    fn fmt_article_title_in_list(
+        config: &Config,
+        article: &Article,
+        max_title_len: usize,
+    ) -> String {
+        let article_title_config = config.article_title.unwrap_or_default();
+        let mut title = String::new();
+        // article date
+        if article_title_config.show_timestamp && article.date.is_some() {
+            title.push_str(format!("{} ", article.date.unwrap().to_rfc3339()).as_str());
+        }
+        if article_title_config.show_author && !article.authors.is_empty() {
+            title.push_str(format!("({}) ", article.authors[0]).as_str());
+        }
+        let max_title_len = max_title_len.saturating_sub(title.len());
+        if let Some(article_title) = article.title.as_deref() {
+            title.push_str(&str_helpers::elide_string_at(article_title, max_title_len))
+        }
+        title
     }
 
     /// Get feed list component

@@ -96,6 +96,25 @@ mod test {
             config.sources.get("lefigaro").unwrap().as_str(),
             "https://www.lefigaro.fr/rss/figaro_actualites.xml"
         );
+        assert_eq!(config.article_title.as_ref().unwrap().show_author, true);
+        assert_eq!(config.article_title.as_ref().unwrap().show_timestamp, false);
+    }
+
+    #[test]
+    fn should_deserialize_config_wno_opts() {
+        let config = create_good_wno_opts_toml_config();
+        let reader = File::open(config.path()).expect("Could not open TOML file");
+        let config: Config = deserialize(Box::new(reader)).ok().unwrap();
+        assert_eq!(config.sources.len(), 2);
+        assert_eq!(
+            config.sources.get("nytimes").unwrap().as_str(),
+            "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        );
+        assert_eq!(
+            config.sources.get("lefigaro").unwrap().as_str(),
+            "https://www.lefigaro.fr/rss/figaro_actualites.xml"
+        );
+        assert!(config.article_title.is_none());
     }
 
     #[test]
@@ -108,6 +127,22 @@ mod test {
     fn create_good_toml_config() -> tempfile::NamedTempFile {
         let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
         let file_content: &str = r##"
+        [article-title]
+        show-author = true
+        show-timestamp = false
+
+        [sources]
+        nytimes = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        lefigaro = "https://www.lefigaro.fr/rss/figaro_actualites.xml"
+        "##;
+        tmpfile.write_all(file_content.as_bytes()).unwrap();
+        tmpfile
+    }
+
+    fn create_good_wno_opts_toml_config() -> tempfile::NamedTempFile {
+        let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let file_content: &str = r##"
+
         [sources]
         nytimes = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
         lefigaro = "https://www.lefigaro.fr/rss/figaro_actualites.xml"

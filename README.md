@@ -7,7 +7,7 @@
 <p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
 <p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.3.0 (??/08/2022)</p>
+<p align="center">Current version: 0.3.0 (29/08/2022)</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"

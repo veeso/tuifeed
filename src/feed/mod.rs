@@ -44,9 +44,9 @@ impl Feed {
 
 impl From<RssFeed> for Feed {
     fn from(feed: RssFeed) -> Self {
-        Self {
-            articles: feed.entries.into_iter().map(Article::from).collect(),
-        }
+        let mut articles: Vec<Article> = feed.entries.into_iter().map(Article::from).collect();
+        articles.sort_by_key(|x| std::cmp::Reverse(x.date));
+        Self { articles }
     }
 }
 

@@ -1,7 +1,8 @@
 # Changelog
 
 - [Changelog](#changelog)
-  - [0.3.1](#031)
+  - [0.3.2](#032)
+  - [0.3.1 (yanked)](#031-yanked)
   - [0.3.0](#030)
   - [0.2.1](#021)
   - [0.2.0](#020)
@@ -10,7 +11,13 @@
 
 ---
 
-## 0.3.1
+## 0.3.2
+
+Released on 30/08/2022
+
+- Fixed articles sorted by date
+
+## 0.3.1 (yanked)
 
 Released on 30/08/2022
 

@@ -273,8 +273,11 @@ impl Ui {
         feed: &Feed,
         max_title_len: usize,
     ) -> ArticleList {
-        let articles: Vec<String> = feed
-            .articles()
+        // sort article by date
+        let mut sorted_articles: Vec<&Article> = feed.articles().collect();
+        sorted_articles.sort_by_key(|x| (*x).date);
+        let articles: Vec<String> = sorted_articles
+            .into_iter()
             .map(|x| Self::fmt_article_title_in_list(config, x, max_title_len))
             .collect();
         ArticleList::new(articles.as_slice())

@@ -114,6 +114,16 @@ curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 
 > 🔴 If you don't trust the script, you can view its content [on Github](https://github.com/veeso/tuifeed/blob/main/install.sh)
 
+
+#### FreeBSD users
+
+Install via pkg:
+
+```sh
+pkg install tuifeed
+```
+
+
 #### Windows users 🍫
 
 Install via [Chocolatey](https://chocolatey.org/):

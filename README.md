@@ -152,7 +152,7 @@ tuifeed -c
 
 this will open the configuration file in your favourite editor.
 
-> 💡 If this option doesn't work for your, you can edit the file manually at:
+> 💡 If this option doesn't work for you, you can edit the file manually at:
 >
 > - `$XDG_CONFIG_HOME/tuifeed/config.toml` on Linux
 > - `/Users/$USER/Library/Application\ Support/tuifeed/config.toml` on MacOS

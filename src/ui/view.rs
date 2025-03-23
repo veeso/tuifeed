@@ -1,20 +1,22 @@
-use super::{components::*, FlatFeedState, Id, Kiosk, Msg, Ui};
-use crate::config::Config;
-use crate::feed::{Article, Feed};
-use crate::helpers::strings as str_helpers;
-use crate::helpers::ui as ui_helpers;
-
 use std::time::{Duration, Instant};
-use tuirealm::tui::layout::{Constraint, Direction, Layout};
-use tuirealm::tui::widgets::Clear;
+
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::props::{PropPayload, PropValue};
+use tuirealm::ratatui::layout::{Constraint, Direction, Layout};
+use tuirealm::ratatui::widgets::Clear;
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
-    props::{PropPayload, PropValue},
     Application, AttrValue, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause,
     SubEventClause,
 };
 
+use super::components::*;
+use super::{FlatFeedState, Id, Kiosk, Msg, Ui};
+use crate::config::Config;
+use crate::feed::{Article, Feed};
+use crate::helpers::{strings as str_helpers, ui as ui_helpers};
+
 static mut SUMMARY_WIDTH: usize = 0;
+const CROSSTERM_MAX_POLL: usize = 10;
 
 /// Article view components
 struct ArticleView<'a> {
@@ -25,7 +27,7 @@ struct ArticleView<'a> {
     title: ArticleTitle,
 }
 
-impl<'a> From<&Article> for ArticleView<'a> {
+impl From<&Article> for ArticleView<'_> {
     fn from(article: &Article) -> Self {
         unsafe {
             Self {
@@ -47,22 +49,25 @@ impl Ui {
     ) -> Application<Id, Msg, NoUserEvent> {
         let mut app = Application::init(
             EventListenerCfg::default()
-                .default_input_listener(ticks)
+                .crossterm_input_listener(ticks, CROSSTERM_MAX_POLL)
                 .poll_timeout(ticks),
         );
-        assert!(app
-            .mount(Id::FeedList, Box::new(Self::get_feed_list(kiosk)), vec![])
-            .is_ok());
-        assert!(app
-            .mount(Id::ArticleList, Box::new(ArticleList::new(&[])), vec![])
-            .is_ok());
-        assert!(app
-            .mount(
+        assert!(
+            app.mount(Id::FeedList, Box::new(Self::get_feed_list(kiosk)), vec![])
+                .is_ok()
+        );
+        assert!(
+            app.mount(Id::ArticleList, Box::new(ArticleList::new(&[])), vec![])
+                .is_ok()
+        );
+        assert!(
+            app.mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::default()),
                 Self::subs(),
             )
-            .is_ok());
+            .is_ok()
+        );
         assert!(app.active(&Id::FeedList).is_ok());
 
         app
@@ -71,102 +76,94 @@ impl Ui {
     pub(super) fn view(&mut self) {
         self.last_redraw = Instant::now();
         self.redraw = false;
-        assert!(self
-            .terminal
-            .raw_mut()
-            .draw(|f| {
-                let chunks = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(1)
-                    .constraints(
-                        [
-                            Constraint::Percentage(50), // Lists
-                            Constraint::Percentage(50), // Article
-                        ]
-                        .as_ref(),
-                    )
-                    .split(f.size());
+        assert!(
+            self.terminal
+                .raw_mut()
+                .draw(|f| {
+                    let chunks = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(1)
+                        .constraints(
+                            [
+                                Constraint::Percentage(50), // Lists
+                                Constraint::Percentage(50), // Article
+                            ]
+                            .as_ref(),
+                        )
+                        .split(f.area());
 
-                // Render layout only if kiosk has been initialized
-                // -- list
-                let list_chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .horizontal_margin(2)
-                    .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
-                    .split(chunks[0]);
-                self.application.view(&Id::FeedList, f, list_chunks[0]);
-                self.application.view(&Id::ArticleList, f, list_chunks[1]);
-                // -- article
-                let article_chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(
-                        [
-                            Constraint::Length(3), // Title
-                            Constraint::Length(1), // Authors + date
-                            Constraint::Min(6),    // Summary
-                            Constraint::Length(1), // Link
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks[1]);
-                let second_article_row = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
-                    .split(article_chunks[1]);
-                self.application
-                    .view(&Id::ArticleTitle, f, article_chunks[0]);
-                self.application
-                    .view(&Id::ArticleAuthors, f, second_article_row[0]);
-                self.application
-                    .view(&Id::ArticleDate, f, second_article_row[1]);
-                // Update summary width
-                unsafe {
-                    SUMMARY_WIDTH = (article_chunks[2].width as usize).saturating_sub(4);
-                }
-                self.application
-                    .view(&Id::ArticleSummary, f, article_chunks[2]);
-                self.application
-                    .view(&Id::ArticleLink, f, article_chunks[3]);
-                // -- popups
-                if self.application.mounted(&Id::QuitPopup) {
-                    let popup = ui_helpers::draw_area_in(f.size(), 30, 10);
-                    f.render_widget(Clear, popup);
-                    self.application.view(&Id::QuitPopup, f, popup);
-                } else if self.application.mounted(&Id::ErrorPopup) {
-                    let popup = ui_helpers::draw_area_in(f.size(), 50, 15);
-                    f.render_widget(Clear, popup);
-                    self.application.view(&Id::ErrorPopup, f, popup);
-                }
-            })
-            .is_ok());
-    }
-
-    /// initialize terminal
-    pub(super) fn init_terminal(&mut self) {
-        let _ = self.terminal.enable_raw_mode();
-        let _ = self.terminal.enter_alternate_screen();
-        let _ = self.terminal.clear_screen();
-    }
-
-    /// finalize terminal
-    pub(super) fn finalize_terminal(&mut self) {
-        let _ = self.terminal.disable_raw_mode();
-        let _ = self.terminal.leave_alternate_screen();
-        let _ = self.terminal.clear_screen();
+                    // Render layout only if kiosk has been initialized
+                    // -- list
+                    let list_chunks = Layout::default()
+                        .direction(Direction::Vertical)
+                        .horizontal_margin(2)
+                        .constraints(
+                            [Constraint::Percentage(30), Constraint::Percentage(70)].as_ref(),
+                        )
+                        .split(chunks[0]);
+                    self.application.view(&Id::FeedList, f, list_chunks[0]);
+                    self.application.view(&Id::ArticleList, f, list_chunks[1]);
+                    // -- article
+                    let article_chunks = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints(
+                            [
+                                Constraint::Length(3), // Title
+                                Constraint::Length(1), // Authors + date
+                                Constraint::Min(6),    // Summary
+                                Constraint::Length(1), // Link
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks[1]);
+                    let second_article_row = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [Constraint::Percentage(60), Constraint::Percentage(40)].as_ref(),
+                        )
+                        .split(article_chunks[1]);
+                    self.application
+                        .view(&Id::ArticleTitle, f, article_chunks[0]);
+                    self.application
+                        .view(&Id::ArticleAuthors, f, second_article_row[0]);
+                    self.application
+                        .view(&Id::ArticleDate, f, second_article_row[1]);
+                    // Update summary width
+                    unsafe {
+                        SUMMARY_WIDTH = (article_chunks[2].width as usize).saturating_sub(4);
+                    }
+                    self.application
+                        .view(&Id::ArticleSummary, f, article_chunks[2]);
+                    self.application
+                        .view(&Id::ArticleLink, f, article_chunks[3]);
+                    // -- popups
+                    if self.application.mounted(&Id::QuitPopup) {
+                        let popup = ui_helpers::draw_area_in(f.area(), 30, 10);
+                        f.render_widget(Clear, popup);
+                        self.application.view(&Id::QuitPopup, f, popup);
+                    } else if self.application.mounted(&Id::ErrorPopup) {
+                        let popup = ui_helpers::draw_area_in(f.area(), 50, 15);
+                        f.render_widget(Clear, popup);
+                        self.application.view(&Id::ErrorPopup, f, popup);
+                    }
+                })
+                .is_ok()
+        );
     }
 
     // -- components
 
     /// Mount error and give focus to it
     pub(super) fn mount_error_popup(&mut self, err: impl ToString) {
-        assert!(self
-            .application
-            .remount(
-                Id::ErrorPopup,
-                Box::new(ErrorPopup::new(err.to_string())),
-                vec![]
-            )
-            .is_ok());
+        assert!(
+            self.application
+                .remount(
+                    Id::ErrorPopup,
+                    Box::new(ErrorPopup::new(err.to_string())),
+                    vec![]
+                )
+                .is_ok()
+        );
         assert!(self.application.active(&Id::ErrorPopup).is_ok());
     }
 
@@ -176,10 +173,11 @@ impl Ui {
 
     /// Mount quit popup
     pub(super) fn mount_quit_popup(&mut self) {
-        assert!(self
-            .application
-            .remount(Id::QuitPopup, Box::new(QuitPopup::default()), vec![])
-            .is_ok());
+        assert!(
+            self.application
+                .remount(Id::QuitPopup, Box::new(QuitPopup::default()), vec![])
+                .is_ok()
+        );
         assert!(self.application.active(&Id::QuitPopup).is_ok());
     }
 
@@ -209,60 +207,70 @@ impl Ui {
             PropValue::Str(name.to_string()),
             PropValue::U8(state),
         )));
-        assert!(self
-            .application
-            .attr(
-                &Id::FeedList,
-                Attribute::Custom(lists::FEED_LIST_PROP_ITEMS),
-                prop_value
-            )
-            .is_ok());
+        assert!(
+            self.application
+                .attr(
+                    &Id::FeedList,
+                    Attribute::Custom(lists::FEED_LIST_PROP_ITEMS),
+                    prop_value
+                )
+                .is_ok()
+        );
     }
 
     /// Initialize article list entries and article.
     /// This function should be called only if article list is empty
     pub(super) fn init_article(&mut self, config: &Config) {
-        if let Some(source) = self.sorted_sources().get(0) {
-            if let Some(feed) = self.kiosk.get_feed(source.as_str()) {
-                assert!(self
-                    .application
-                    .remount(
-                        Id::ArticleList,
-                        Box::new(self.get_article_list(config, feed, self.max_article_name_len())),
-                        vec![]
-                    )
-                    .is_ok());
-                // Mount first article
-                if let Some(article) = feed.articles().next() {
-                    let ArticleView {
-                        authors,
-                        date,
-                        link,
-                        summary,
-                        title,
-                    } = article.into();
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleAuthors, Box::new(authors), vec![])
-                        .is_ok());
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleDate, Box::new(date), vec![])
-                        .is_ok());
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleLink, Box::new(link), vec![])
-                        .is_ok());
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleSummary, Box::new(summary), vec![])
-                        .is_ok());
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleTitle, Box::new(title), vec![])
-                        .is_ok());
-                }
-            }
+        let Some(source) = self.sorted_sources().first().cloned() else {
+            return;
+        };
+        let Some(feed) = self.kiosk.get_feed(source.as_str()) else {
+            return;
+        };
+
+        assert!(
+            self.application
+                .remount(
+                    Id::ArticleList,
+                    Box::new(self.get_article_list(config, feed, self.max_article_name_len())),
+                    vec![]
+                )
+                .is_ok()
+        );
+        // Mount first article
+        if let Some(article) = feed.articles().next() {
+            let ArticleView {
+                authors,
+                date,
+                link,
+                summary,
+                title,
+            } = article.into();
+            assert!(
+                self.application
+                    .remount(Id::ArticleAuthors, Box::new(authors), vec![])
+                    .is_ok()
+            );
+            assert!(
+                self.application
+                    .remount(Id::ArticleDate, Box::new(date), vec![])
+                    .is_ok()
+            );
+            assert!(
+                self.application
+                    .remount(Id::ArticleLink, Box::new(link), vec![])
+                    .is_ok()
+            );
+            assert!(
+                self.application
+                    .remount(Id::ArticleSummary, Box::new(summary), vec![])
+                    .is_ok()
+            );
+            assert!(
+                self.application
+                    .remount(Id::ArticleTitle, Box::new(title), vec![])
+                    .is_ok()
+            );
         }
     }
 
@@ -360,26 +368,31 @@ impl Ui {
                     summary,
                     title,
                 } = article.into();
-                assert!(self
-                    .application
-                    .remount(Id::ArticleAuthors, Box::new(authors), vec![])
-                    .is_ok());
-                assert!(self
-                    .application
-                    .remount(Id::ArticleDate, Box::new(date), vec![])
-                    .is_ok());
-                assert!(self
-                    .application
-                    .remount(Id::ArticleLink, Box::new(link), vec![])
-                    .is_ok());
-                assert!(self
-                    .application
-                    .remount(Id::ArticleSummary, Box::new(summary), vec![])
-                    .is_ok());
-                assert!(self
-                    .application
-                    .remount(Id::ArticleTitle, Box::new(title), vec![])
-                    .is_ok());
+                assert!(
+                    self.application
+                        .remount(Id::ArticleAuthors, Box::new(authors), vec![])
+                        .is_ok()
+                );
+                assert!(
+                    self.application
+                        .remount(Id::ArticleDate, Box::new(date), vec![])
+                        .is_ok()
+                );
+                assert!(
+                    self.application
+                        .remount(Id::ArticleLink, Box::new(link), vec![])
+                        .is_ok()
+                );
+                assert!(
+                    self.application
+                        .remount(Id::ArticleSummary, Box::new(summary), vec![])
+                        .is_ok()
+                );
+                assert!(
+                    self.application
+                        .remount(Id::ArticleTitle, Box::new(title), vec![])
+                        .is_ok()
+                );
             }
         }
     }

@@ -61,9 +61,9 @@ pub fn strip_html(s: &str) -> String {
 #[cfg(test)]
 mod test {
 
-    use super::*;
-
     use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
     fn should_elide_string() {

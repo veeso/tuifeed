@@ -2,8 +2,9 @@
 //!
 //! Configuration seralizer
 
-use serde::de::DeserializeOwned;
 use std::io::Read;
+
+use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 /// Contains the error for serializer/deserializer
@@ -62,12 +63,13 @@ where
 #[cfg(test)]
 mod test {
 
-    use super::*;
-    use crate::config::Config;
-
-    use pretty_assertions::assert_eq;
     use std::fs::File;
     use std::io::Write;
+
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+    use crate::config::Config;
 
     #[test]
     fn should_create_serialization_errors() {

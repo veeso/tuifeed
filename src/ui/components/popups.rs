@@ -2,13 +2,13 @@
 //!
 //! Popups components
 
-use super::Msg;
-
 use tui_realm_stdlib::{Paragraph, Radio};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+
+use super::Msg;
 
 #[derive(MockComponent)]
 pub struct QuitPopup {

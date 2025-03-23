@@ -11,12 +11,9 @@ mod popups;
 pub use article::{ArticleAuthors, ArticleDate, ArticleLink, ArticleSummary, ArticleTitle};
 pub use lists::{ArticleList, FeedList};
 pub use popups::{ErrorPopup, QuitPopup};
-
 use tui_realm_stdlib::Phantom;
-use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
-    Component, Event, MockComponent, NoUserEvent,
-};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::{Component, Event, MockComponent, NoUserEvent};
 
 #[derive(Default, MockComponent)]
 pub struct GlobalListener {

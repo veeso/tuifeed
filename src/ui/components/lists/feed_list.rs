@@ -2,19 +2,17 @@
 //!
 //! Mock component to implement the feed list
 
-use crate::ui::lib::FlatFeedState;
-
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, Color, Style, TextModifiers, TextSpan,
 };
-use tuirealm::tui::{
-    layout::{Corner, Rect},
-    text::{Span, Spans},
-    widgets::{List as TuiList, ListItem, ListState},
-};
+use tuirealm::ratatui::layout::Rect;
+use tuirealm::ratatui::text::{Line, Span};
+use tuirealm::ratatui::widgets::{List as TuiList, ListDirection, ListItem, ListState};
 use tuirealm::{Frame, MockComponent, State};
+
+use crate::ui::lib::FlatFeedState;
 
 const SEQUENCE: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
 pub const FEED_LIST_PROP_ITEMS: &str = "items";
@@ -103,7 +101,7 @@ impl MockComponent for FeedList {
             .items
             .iter()
             .map(|(name, state)| {
-                ListItem::new(Spans::from(vec![
+                ListItem::new(Line::default().spans(vec![
                     Self::feed_state_to_span(state, step),
                     Span::from(name.as_str()),
                 ]))
@@ -116,7 +114,7 @@ impl MockComponent for FeedList {
         // Make list
         let list = TuiList::new(list_items)
             .block(div)
-            .start_corner(Corner::TopLeft)
+            .direction(ListDirection::TopToBottom)
             .highlight_style(Style::default().fg(fg).bg(bg))
             .highlight_symbol("➤ ");
         let mut state: ListState = ListState::default();

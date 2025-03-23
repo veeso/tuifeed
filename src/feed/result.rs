@@ -41,19 +41,15 @@ impl From<ParseFeedError> for FeedError {
 #[cfg(test)]
 mod test {
 
-    use super::*;
-
     use feed_rs::parser::ParseErrorKind;
     use pretty_assertions::assert_eq;
-    use ureq::Response;
+
+    use super::*;
 
     #[test]
     fn should_convert_request_error() {
         assert_eq!(
-            FeedError::from(RequestError::Status(
-                404,
-                Response::new(404, "not found", "").ok().unwrap()
-            )),
+            FeedError::from(RequestError::StatusCode(404,)),
             FeedError::Http(String::from("https://example.com/: status code 404"))
         );
     }

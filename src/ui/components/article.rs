@@ -2,10 +2,6 @@
 //!
 //! Components related to the article area
 
-use super::Msg;
-use crate::helpers::fmt as fmt_helpers;
-use crate::helpers::strings as str_helpers;
-
 use chrono::{DateTime, Local};
 use tui_realm_stdlib::{Label, Paragraph};
 use tui_realm_textarea::TextArea;
@@ -15,6 +11,9 @@ use tuirealm::props::{
     Alignment, BorderSides, BorderType, Borders, Color, Style, TextModifiers, TextSpan,
 };
 use tuirealm::{Component, Event, MockComponent, NoUserEvent};
+
+use super::Msg;
+use crate::helpers::{fmt as fmt_helpers, strings as str_helpers};
 
 #[derive(MockComponent)]
 pub struct ArticleTitle {
@@ -110,8 +109,8 @@ pub struct ArticleSummary<'a> {
     component: TextArea<'a>,
 }
 
-impl<'a> MockComponent for ArticleSummary<'a> {
-    fn view(&mut self, frame: &mut tuirealm::Frame, area: tuirealm::tui::layout::Rect) {
+impl MockComponent for ArticleSummary<'_> {
+    fn view(&mut self, frame: &mut tuirealm::Frame, area: tuirealm::ratatui::layout::Rect) {
         self.component.view(frame, area);
     }
 
@@ -132,7 +131,7 @@ impl<'a> MockComponent for ArticleSummary<'a> {
     }
 }
 
-impl<'a> ArticleSummary<'a> {
+impl ArticleSummary<'_> {
     pub fn new(summary: &str, width: usize) -> Self {
         Self {
             component: TextArea::new(Self::make_summary_rows(summary, width))
@@ -181,7 +180,7 @@ impl<'a> ArticleSummary<'a> {
     }
 }
 
-impl<'a> Component<Msg, NoUserEvent> for ArticleSummary<'a> {
+impl Component<Msg, NoUserEvent> for ArticleSummary<'_> {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {

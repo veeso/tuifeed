@@ -19,8 +19,9 @@ pub fn write_file(p: &Path, content: &str) -> Result<(), IoError> {
 #[cfg(test)]
 mod test {
 
-    use super::*;
     use tempfile::NamedTempFile;
+
+    use super::*;
 
     #[test]
     fn should_write_file() {

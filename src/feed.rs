@@ -7,15 +7,16 @@
 mod client;
 mod result;
 
-use crate::helpers::strings as str_helpers;
+use std::slice::Iter;
 
-// -- export
-pub use client::Client;
-pub use result::{FeedError, FeedResult};
 // -- deps
 use chrono::{DateTime, Local};
+// -- export
+pub use client::Client;
 use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
-use std::slice::Iter;
+pub use result::{FeedError, FeedResult};
+
+use crate::helpers::strings as str_helpers;
 
 /// Contains, for a feed source, the list of articles fetched from remote
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -61,7 +62,7 @@ impl From<RssEntry> for Article {
             summary: content_or_summary,
             url: entry
                 .links
-                .get(0)
+                .first()
                 .map(|x| x.href.clone())
                 .unwrap_or(entry.id),
             date: entry
@@ -95,10 +96,10 @@ fn content_or_summary(entry: &RssEntry) -> String {
 #[cfg(test)]
 mod test {
 
-    use super::*;
-
     use feed_rs::model::FeedType;
     use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
     fn should_get_feed_attributes() {

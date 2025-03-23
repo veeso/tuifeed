@@ -7,10 +7,11 @@ extern crate lazy_regex;
 #[macro_use]
 extern crate lazy_static;
 
-use argh::FromArgs;
 use std::env;
 use std::path::PathBuf;
 use std::process::exit;
+
+use argh::FromArgs;
 
 // includes
 mod config;
@@ -19,11 +20,8 @@ mod helpers;
 mod ui;
 
 // -- internal
-use config::serializer as config_serializer;
-use config::Config;
-use helpers::file as file_helpers;
-use helpers::open as open_helpers;
-use helpers::path as path_helpers;
+use config::{Config, serializer as config_serializer};
+use helpers::{file as file_helpers, open as open_helpers, path as path_helpers};
 use ui::Ui;
 
 #[derive(FromArgs)]
@@ -68,7 +66,9 @@ fn main() {
         Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("Failed to initialize configuration: {}", e);
-            eprintln!("If necessary, you can run tuifeed with `-c` option to edit and eventually fix your configuration file");
+            eprintln!(
+                "If necessary, you can run tuifeed with `-c` option to edit and eventually fix your configuration file"
+            );
             exit(255);
         }
     };

@@ -2,9 +2,10 @@
 //!
 //! Async feed client
 
-use crate::feed::{Client, Feed, FeedResult};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
+
+use crate::feed::{Client, Feed, FeedResult};
 
 #[derive(Debug, Default)]
 pub struct FeedClient {
@@ -14,15 +15,12 @@ pub struct FeedClient {
 
 impl FeedClient {
     /// Fetch source.
-    /// Panics if fails to send request
     pub fn fetch(&mut self, name: &str, uri: &str) {
         self.workers.push(WorkerThread::start(name, uri));
     }
 
-    /// Poll receiver for fetch results.
-    /// Panics if fails to poll
+    /// Poll worker threads
     pub fn poll(&mut self) -> Option<(String, FeedResult<Feed>)> {
-        // FIXME: use drain_filter when stable
         let mut i = 0;
         while i < self.workers.len() {
             // if worker at `i` is joinable, join and return
@@ -109,10 +107,7 @@ impl Worker {
         // Set running to false
         self.stop();
         // Return to handle
-        (
-            self.name.clone(),
-            Client::default().fetch(self.uri.as_str()),
-        )
+        (self.name.clone(), Client.fetch(self.uri.as_str()))
     }
 
     fn stop(&mut self) {
@@ -126,11 +121,12 @@ impl Worker {
 #[cfg(test)]
 mod test {
 
-    use super::*;
-
-    use pretty_assertions::assert_eq;
     use std::thread::sleep;
     use std::time::{Duration, Instant};
+
+    use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
     fn should_run_worker() {

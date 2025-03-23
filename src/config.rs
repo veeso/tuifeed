@@ -4,8 +4,9 @@
 
 pub mod serializer;
 
-use serde::Deserialize;
 use std::collections::HashMap;
+
+use serde::Deserialize;
 
 /// tuifeed configuration
 #[derive(Deserialize, Clone, Debug, Default)]

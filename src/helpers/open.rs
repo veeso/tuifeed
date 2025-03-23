@@ -2,8 +2,9 @@
 //!
 //! Open helpers
 
-use open;
 use std::path::Path;
+
+use open;
 
 /// Open text file
 pub fn open_text_file(p: &Path) -> Result<(), String> {

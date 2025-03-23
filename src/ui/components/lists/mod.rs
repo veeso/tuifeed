@@ -7,16 +7,14 @@ mod feed_list;
 pub use feed_list::{
     FEED_LIST_PROP_ITEMS, FEED_STATE_ERROR, FEED_STATE_LOADING, FEED_STATE_SUCCESS,
 };
-
-use crate::ui::lib::FlatFeedState;
-
-use super::Msg;
-
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TextSpan};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+
+use super::Msg;
+use crate::ui::lib::FlatFeedState;
 
 #[derive(MockComponent)]
 pub struct FeedList {

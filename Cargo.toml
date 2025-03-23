@@ -3,7 +3,7 @@ authors = ["Christian Visintin <christian.visintin1997@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "A terminal feed reader with a fancy ui"
 documentation = "https://docs.rs/tuifeed"
-edition = "2021"
+edition = "2024"
 homepage = "https://veeso.github.io/tuifeed/"
 include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 keywords = ["rss", "feed", "feed-reader", "command-line-utility"]
@@ -11,30 +11,30 @@ license = "MIT"
 name = "tuifeed"
 readme = "README.md"
 repository = "https://github.com/veeso/tuifeed"
-version = "0.3.2"
+version = "0.4.0"
 
 [[bin]]
 name = "tuifeed"
 path = "src/main.rs"
 
 [dependencies]
-argh = "0.1.8"
-chrono = "^0.4.22"
-dirs = "4.0.0"
+argh = "0.1"
+chrono = "^0.4"
+dirs = "6"
 feed-rs = "^1.1.0"
-lazy-regex = "2.3.0"
-lazy_static = "1.4.0"
-open = "3.0.2"
-serde = { version = "^1.0.0", features = [ "derive" ] }
-thiserror = "^1.0.0"
-toml = "0.5.9"
-tuirealm = "=1.7.0"
-tui-realm-stdlib = "^1.1.7"
-tui-realm-textarea = "^1.1.0"
-unicode-truncate = "^0.2.0"
-ureq = { version = "2.5.0", features = [ "tls" ] }
+lazy-regex = "3"
+lazy_static = "1.5"
+open = "5"
+serde = { version = "^1", features = ["derive"] }
+thiserror = "2"
+toml = "0.8"
+tuirealm = "2"
+tui-realm-stdlib = "2"
+tui-realm-textarea = "2.1"
+unicode-truncate = "^2"
+ureq = { version = "3", features = ["rustls"] }
 
 [dev-dependencies]
-pretty_assertions = "^1.2.1"
-serial_test = "^0.9.0"
-tempfile = "^3.3.0"
+pretty_assertions = "^1"
+serial_test = "3"
+tempfile = "3"

@@ -2,8 +2,9 @@
 //!
 //! System path helpers
 
-use super::file as file_helper;
 use std::path::{Path, PathBuf};
+
+use super::file as file_helper;
 
 /// Get tuifeed configuration directory path.
 /// Returns None, if it's not possible to get it
@@ -63,12 +64,13 @@ fn init_config_file(p: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
 
-    use super::*;
+    use std::fs::{File, OpenOptions};
+    use std::io::Write;
 
     use pretty_assertions::assert_eq;
     use serial_test::serial;
-    use std::fs::{File, OpenOptions};
-    use std::io::Write;
+
+    use super::*;
 
     #[test]
     #[serial]

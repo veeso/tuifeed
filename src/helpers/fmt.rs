@@ -12,13 +12,12 @@ pub fn format_datetime(datetime: DateTime<Local>, fmt: &str) -> String {
 #[cfg(test)]
 mod test {
 
-    use super::*;
+    use std::ops::Add;
+    use std::time::{Duration, SystemTime};
 
     use pretty_assertions::assert_eq;
-    use std::{
-        ops::Add,
-        time::{Duration, SystemTime},
-    };
+
+    use super::*;
 
     #[test]
     fn should_format_datetime() {

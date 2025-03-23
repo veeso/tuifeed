@@ -6,33 +6,33 @@ mod components;
 mod lib;
 mod view;
 
+use std::time::{Duration, Instant};
+
+use lib::{FeedClient, FeedState, FlatFeedState, Kiosk};
+use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
+use tuirealm::{
+    Application, AttrValue, Attribute, NoUserEvent, PollStrategy, State, StateValue, Update,
+};
+
 use crate::config::Config;
 use crate::feed::Feed;
 use crate::helpers::open as open_helpers;
-
-use lib::{FeedClient, FeedState, FlatFeedState, Kiosk};
-
-use std::time::{Duration, Instant};
-use tuirealm::{
-    terminal::TerminalBridge, Application, AttrValue, Attribute, NoUserEvent, PollStrategy, State,
-    StateValue, Update,
-};
 
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(50);
 
 /// identifiers for components
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
-    GlobalListener,
-    FeedList,
-    ArticleList,
-    ArticleTitle,
-    ArticleDate,
     ArticleAuthors,
-    ArticleSummary,
+    ArticleDate,
     ArticleLink,
-    QuitPopup,
+    ArticleList,
+    ArticleSummary,
+    ArticleTitle,
     ErrorPopup,
+    FeedList,
+    GlobalListener,
+    QuitPopup,
 }
 
 /// Messages produced by components
@@ -45,12 +45,13 @@ pub enum Msg {
     CloseQuitPopup,
     FeedChanged(usize),
     FeedListBlur,
-    FetchSource,
     FetchAllSources,
+    FetchSource,
     GoReadArticle,
     OpenArticle,
     Quit,
     ShowQuitPopup,
+    /// No-op
     None,
 }
 
@@ -62,12 +63,15 @@ pub struct Ui {
     kiosk: Kiosk,
     last_redraw: Instant,
     redraw: bool,
-    terminal: TerminalBridge,
+    terminal: TerminalBridge<CrosstermTerminalAdapter>,
 }
 
 impl Ui {
-    /// Init a new `Ui`
+    /// Init a new [`Ui`] instance
     pub fn init(config: Config, ticks: u64) -> Self {
+        let mut terminal = TerminalBridge::init_crossterm().expect("Could not initialize terminal");
+        let _ = terminal.disable_mouse_capture();
+
         let mut kiosk = Kiosk::default();
         for name in config.sources.keys() {
             kiosk.insert_feed(name, FeedState::Loading);
@@ -79,13 +83,12 @@ impl Ui {
             kiosk,
             last_redraw: Instant::now(),
             redraw: true,
-            terminal: TerminalBridge::new().expect("could not setup terminal"),
+            terminal,
         }
     }
 
-    /// run ui
+    /// run the ui
     pub fn run(mut self) {
-        self.init_terminal();
         // Fetch sources once
         self.fetch_all_sources();
         let mut quit = false;
@@ -116,11 +119,9 @@ impl Ui {
                 self.view();
             }
         }
-        self.finalize_terminal();
     }
 
     /// Fetch all sources and update Ui
-    #[allow(clippy::needless_collect)]
     fn fetch_all_sources(&mut self) {
         // Fetch sources
         let sources: Vec<(String, String)> = self
@@ -244,10 +245,11 @@ impl Update<Msg> for Ui {
                 if let Some(feed) = self.kiosk.get_feed(feed.as_str()) {
                     let articles =
                         self.get_article_list(&self.config, feed, self.max_article_name_len());
-                    assert!(self
-                        .application
-                        .remount(Id::ArticleList, Box::new(articles), vec![])
-                        .is_ok());
+                    assert!(
+                        self.application
+                            .remount(Id::ArticleList, Box::new(articles), vec![])
+                            .is_ok()
+                    );
                     // Then load the first article of feed
                     self.update_article(0);
                 }
@@ -291,5 +293,11 @@ impl Update<Msg> for Ui {
             }
             Msg::None => None,
         }
+    }
+}
+
+impl Drop for Ui {
+    fn drop(&mut self) {
+        let _ = self.terminal.restore();
     }
 }

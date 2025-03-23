@@ -2,9 +2,9 @@
 //!
 //! kiosk entity, a collector for feed sources
 
-use crate::feed::{Feed, FeedError};
-
 use std::collections::HashMap;
+
+use crate::feed::{Feed, FeedError};
 
 /// Describes the current feed holder.
 /// It contains different sources, each one with its own feed fetch state
@@ -67,7 +67,7 @@ impl Kiosk {
 
     /// Get sources in kiosk
     pub fn sources(&self) -> Vec<&String> {
-        self.feed.keys().into_iter().collect()
+        self.feed.keys().collect()
     }
 }
 
@@ -84,9 +84,9 @@ impl From<&FeedState> for FlatFeedState {
 #[cfg(test)]
 mod test {
 
-    use super::*;
-
     use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
     fn should_create_kiosk() {

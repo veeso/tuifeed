@@ -221,6 +221,12 @@ impl Ui {
     /// Initialize article list entries and article.
     /// This function should be called only if article list is empty
     pub(super) fn init_article(&mut self, config: &Config) {
+        // view once to get width
+        let summary_width_initialized = unsafe { SUMMARY_WIDTH > 0 };
+        if !summary_width_initialized {
+            self.view();
+        }
+
         let Some(source) = self.sorted_sources().first().cloned() else {
             return;
         };

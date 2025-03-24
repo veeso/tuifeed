@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.0](#040)
   - [0.3.2](#032)
   - [0.3.1 (yanked)](#031-yanked)
   - [0.3.0](#030)
@@ -10,6 +11,12 @@
   - [0.1.0](#010)
 
 ---
+
+## 0.4.0
+
+Released on ??
+
+- fix: first article has width 1
 
 ## 0.3.2
 

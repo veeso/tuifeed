@@ -39,18 +39,8 @@
 <p align="center">
   <a href="https://github.com/veeso/tuifeed/actions"
     ><img
-      src="https://github.com/veeso/tuifeed/workflows/Linux/badge.svg"
+      src="https://github.com/veeso/tuifeed/workflows/build_test/badge.svg"
       alt="Linux CI"
-  /></a>
-  <a href="https://github.com/veeso/tuifeed/actions"
-    ><img
-      src="https://github.com/veeso/tuifeed/workflows/MacOS/badge.svg"
-      alt="MacOS"
-  /></a>
-  <a href="https://github.com/veeso/tuifeed/actions"
-    ><img
-      src="https://github.com/veeso/tuifeed/workflows/Windows/badge.svg"
-      alt="Windows"
   /></a>
 </p>
 

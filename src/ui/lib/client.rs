@@ -107,7 +107,7 @@ impl Worker {
         // Set running to false
         self.stop();
         // Return to handle
-        (self.name.clone(), Client.fetch(&self.source))
+        (self.name.clone(), Client.fetch(&self.name, &self.source))
     }
 
     fn stop(&mut self) {

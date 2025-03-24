@@ -71,7 +71,7 @@ pub struct ArticleList {
 }
 
 impl ArticleList {
-    pub fn new(articles: &[String]) -> Self {
+    pub fn new(articles: &[(String, bool)], selected_line: Option<usize>) -> Self {
         Self {
             component: List::default()
                 .highlighted_color(Color::LightCyan)
@@ -88,9 +88,16 @@ impl ArticleList {
                 .rows(
                     articles
                         .iter()
-                        .map(|x| vec![TextSpan::from(x.as_str())])
+                        .map(|(title, read)| {
+                            let text = match read {
+                                true => TextSpan::from(title.as_str()),
+                                false => TextSpan::from(title.as_str()).reversed(),
+                            };
+                            vec![text]
+                        })
                         .collect(),
-                ),
+                )
+                .selected_line(selected_line.unwrap_or_default()),
         }
     }
 }

@@ -20,7 +20,6 @@ impl Default for QuitPopup {
         Self {
             component: Radio::default()
                 .foreground(Color::Yellow)
-                .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::Yellow)
@@ -79,7 +78,6 @@ impl ErrorPopup {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(Color::Red)
-                .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
                 .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),

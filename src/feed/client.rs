@@ -17,17 +17,17 @@ pub struct Client;
 
 impl Client {
     /// Fetch a single source from remote
-    pub fn fetch(&self, source: &FeedSource) -> FeedResult<Feed> {
+    pub fn fetch(&self, name: impl ToString, source: &FeedSource) -> FeedResult<Feed> {
         match source {
-            FeedSource::File(p) => self.parse_feed(file::FileClient.fetch(p)?),
-            FeedSource::Http(s) => self.parse_feed(http::HttpClient.fetch(s)?),
+            FeedSource::File(p) => self.parse_feed(name, file::FileClient.fetch(p)?),
+            FeedSource::Http(s) => self.parse_feed(name, http::HttpClient.fetch(s)?),
         }
     }
 
     /// Parse feed from HTTP response
-    fn parse_feed<R: Read>(&self, response: R) -> FeedResult<Feed> {
+    fn parse_feed<R: Read>(&self, name: impl ToString, response: R) -> FeedResult<Feed> {
         feed_parser::parse(response)
-            .map(Feed::from)
+            .map(|feed| Feed::new(name, feed))
             .map_err(FeedError::from)
     }
 }
@@ -54,6 +54,7 @@ mod test {
         assert!(
             client
                 .fetch(
+                    "The New York Times",
                     &(String::from("https://rss.nytimes.com/services/xml/rss/nyt/World.xml")
                         .try_into()
                         .unwrap())
@@ -68,6 +69,7 @@ mod test {
         assert!(
             client
                 .fetch(
+                    "The New York Times",
                     &(String::from(
                         "https://rss.nytimes.com/services/xml/rss/nyt/pippopippopippo.xml"
                     )
@@ -83,6 +85,7 @@ mod test {
         assert!(
             Client
                 .fetch(
+                    "The New York Times",
                     &("https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
                         .to_string()
                         .try_into()
@@ -93,6 +96,7 @@ mod test {
         assert!(
             Client
                 .fetch(
+                    "The Guardian",
                     &("https://www.lefigaro.fr/rss/figaro_actualites.xml"
                         .to_string()
                         .try_into()
@@ -113,7 +117,7 @@ mod test {
 
         assert!(
             Client
-                .fetch(&FeedSource::File(f.path().to_path_buf()))
+                .fetch("local", &FeedSource::File(f.path().to_path_buf()))
                 .is_ok()
         );
     }

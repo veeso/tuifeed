@@ -21,6 +21,8 @@ pub const FEED_STATE_ERROR: u8 = 1;
 pub const FEED_STATE_LOADING: u8 = 2;
 pub const FEED_STATE_SUCCESS: u8 = 0;
 
+pub type IsRead = bool;
+
 #[derive(Default)]
 struct OwnStates {
     step: usize,
@@ -42,7 +44,7 @@ impl OwnStates {
 /// A list which prepends the fetch state for each source for the feed
 pub struct FeedList {
     list: List,
-    items: Vec<(String, FlatFeedState)>,
+    items: Vec<(String, FlatFeedState, IsRead)>,
     states: OwnStates,
 }
 
@@ -62,7 +64,10 @@ impl FeedList {
                         .modifiers(BorderType::Rounded),
                 )
                 .rows((0..items.len()).map(|_| vec![TextSpan::new("")]).collect()),
-            items,
+            items: items
+                .into_iter()
+                .map(|(name, state)| (name, state, false))
+                .collect(),
             states: OwnStates::default(),
         }
     }
@@ -100,11 +105,17 @@ impl MockComponent for FeedList {
         let list_items: Vec<ListItem> = self
             .items
             .iter()
-            .map(|(name, state)| {
-                ListItem::new(Line::default().spans(vec![
-                    Self::feed_state_to_span(state, step),
-                    Span::from(name.as_str()),
-                ]))
+            .map(|(name, state, is_read)| {
+                let name = if *is_read {
+                    Span::from(name.as_str())
+                } else {
+                    Span::from(name.as_str())
+                        .style(Style::default().add_modifier(TextModifiers::REVERSED))
+                };
+
+                ListItem::new(
+                    Line::default().spans(vec![Self::feed_state_to_span(state, step), name]),
+                )
             })
             .collect();
         let (fg, bg): (Color, Color) = match focus {
@@ -128,18 +139,20 @@ impl MockComponent for FeedList {
 
     fn attr(&mut self, attr: Attribute, value: AttrValue) {
         if matches!(attr, Attribute::Custom(FEED_LIST_PROP_ITEMS)) {
-            let (name, state) = value.unwrap_payload().unwrap_tup2();
+            let (name, state, read) = value.unwrap_payload().unwrap_tup3();
             let name = name.unwrap_str();
             let state = state.unwrap_u8();
+            let read = read.unwrap_bool();
             let state = match state {
                 FEED_STATE_ERROR => FlatFeedState::Error,
                 FEED_STATE_LOADING => FlatFeedState::Loading,
                 FEED_STATE_SUCCESS => FlatFeedState::Success,
                 _ => panic!("Invalid state {}", state),
             };
-            for (i_name, i_state) in self.items.iter_mut() {
+            for (i_name, i_state, is_read) in self.items.iter_mut() {
                 if i_name == &name {
                     *i_state = state;
+                    *is_read = read;
                     break;
                 }
             }

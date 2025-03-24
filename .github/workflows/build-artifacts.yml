@@ -23,10 +23,12 @@ jobs:
           - release_for: Linux-x86_64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            deb: amd64
 
           - release_for: Linux-ARM
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
+            deb: arm64
 
     runs-on: ${{ matrix.platform.os }}
     steps:
@@ -43,6 +45,12 @@ jobs:
           mv target/${{ matrix.platform.target }}/release/tuifeed .artifact/tuifeed
           tar -czf .artifact/tuifeed-v${{ env.TUIFEED_VERSION }}-${{ matrix.platform.target }}.tar.gz -C .artifact tuifeed
           ls -l .artifact/
+      - name: build deb
+        if: matrix.platform.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.platform.target }}
+          cp target/debian/*.deb .artifact/tuifeed_${{ env.TUIFEED_VERSION }}_${{ matrix.platform.deb }}.deb
       - name: "Upload artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -50,3 +58,11 @@ jobs:
           retention-days: 1
           name: tuifeed-${{ matrix.platform.target }}
           path: .artifact/tuifeed-v${{ env.TUIFEED_VERSION }}-${{ matrix.platform.target }}.tar.gz
+      - name: "Upload deb"
+        if: matrix.platform.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          retention-days: 1
+          name: tuifeed-${{ matrix.platform.target }}-deb
+          path: .artifact/tuifeed_${{ env.TUIFEED_VERSION }}_${{ matrix.platform.deb }}.deb

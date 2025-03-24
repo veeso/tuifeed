@@ -118,9 +118,10 @@ impl MockComponent for FeedList {
                 )
             })
             .collect();
-        let (fg, bg): (Color, Color) = match focus {
-            true => (Color::Reset, Color::LightBlue),
-            false => (Color::LightBlue, Color::Reset),
+        let (fg, bg): (Color, Color) = if focus {
+            (Color::Reset, Color::LightBlue)
+        } else {
+            (Color::LightBlue, Color::Reset)
         };
         // Make list
         let list = TuiList::new(list_items)

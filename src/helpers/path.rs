@@ -24,12 +24,12 @@ pub fn init_config_dir() -> Result<Option<PathBuf>, String> {
         // Append tuifeed dir
         p.push("tuifeed/");
         // If directory doesn't exist, create it
-        match p.exists() {
-            true => Ok(Some(p)),
-            false => match std::fs::create_dir(p.as_path()) {
-                Ok(_) => Ok(Some(p)),
-                Err(err) => Err(err.to_string()),
-            },
+        if p.exists() {
+            return Ok(Some(p));
+        }
+        match std::fs::create_dir(p.as_path()) {
+            Ok(_) => Ok(Some(p)),
+            Err(err) => Err(err.to_string()),
         }
     } else {
         Ok(None)

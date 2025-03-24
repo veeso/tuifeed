@@ -89,9 +89,10 @@ impl ArticleList {
                     articles
                         .iter()
                         .map(|(title, read)| {
-                            let text = match read {
-                                true => TextSpan::from(title.as_str()),
-                                false => TextSpan::from(title.as_str()).reversed(),
+                            let text = if *read {
+                                TextSpan::from(title.as_str())
+                            } else {
+                                TextSpan::from(title.as_str()).reversed()
                             };
                             vec![text]
                         })

@@ -16,6 +16,7 @@
 
 Released on ??
 
+- [issue 4](https://github.com/veeso/tuifeed/issues/4): highlight new articles
 - [issue 14](https://github.com/veeso/tuifeed/issues/14) fix: create config dir at first run
 - fix: first article has width 1
 - [issue 11](https://github.com/veeso/tuifeed/issues/11): add support for local file. Specify local file with `file:///path/to/rss.xml` in the URL field

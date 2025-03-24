@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 const FILE_PREFIX: &str = "file://";
 
 /// A source for a feed
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FeedSource {
     File(PathBuf),
     Http(String),

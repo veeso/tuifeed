@@ -10,6 +10,7 @@ use tuirealm::{
 };
 
 use super::components::*;
+use super::lib::History;
 use super::{FlatFeedState, Id, Kiosk, Msg, Ui};
 use crate::config::Config;
 use crate::feed::{Article, Feed};
@@ -57,8 +58,12 @@ impl Ui {
                 .is_ok()
         );
         assert!(
-            app.mount(Id::ArticleList, Box::new(ArticleList::new(&[])), vec![])
-                .is_ok()
+            app.mount(
+                Id::ArticleList,
+                Box::new(ArticleList::new(&[], None)),
+                vec![]
+            )
+            .is_ok()
         );
         assert!(
             app.mount(
@@ -196,16 +201,17 @@ impl Ui {
     }
 
     /// Update feed list item
-    pub(super) fn update_feed_list_item(&mut self, name: &str, state: FlatFeedState) {
+    pub(super) fn update_feed_list_item(&mut self, name: &str, state: FlatFeedState, read: bool) {
         // Update item
         let state = match state {
             FlatFeedState::Error => lists::FEED_STATE_ERROR,
             FlatFeedState::Loading => lists::FEED_STATE_LOADING,
             FlatFeedState::Success => lists::FEED_STATE_SUCCESS,
         };
-        let prop_value = AttrValue::Payload(PropPayload::Tup2((
+        let prop_value = AttrValue::Payload(PropPayload::Tup3((
             PropValue::Str(name.to_string()),
             PropValue::U8(state),
+            PropValue::Bool(read),
         )));
         assert!(
             self.application
@@ -220,7 +226,7 @@ impl Ui {
 
     /// Initialize article list entries and article.
     /// This function should be called only if article list is empty
-    pub(super) fn init_article(&mut self, config: &Config) {
+    pub(super) fn init_article(&mut self, article_list: ArticleList) {
         // view once to get width
         let summary_width_initialized = unsafe { SUMMARY_WIDTH > 0 };
         if !summary_width_initialized {
@@ -236,11 +242,7 @@ impl Ui {
 
         assert!(
             self.application
-                .remount(
-                    Id::ArticleList,
-                    Box::new(self.get_article_list(config, feed, self.max_article_name_len())),
-                    vec![]
-                )
+                .remount(Id::ArticleList, Box::new(article_list), vec![])
                 .is_ok()
         );
         // Mount first article
@@ -285,13 +287,20 @@ impl Ui {
         &self,
         config: &Config,
         feed: &Feed,
+        history: &History,
         max_title_len: usize,
+        selected_line: Option<usize>,
     ) -> ArticleList {
-        let articles: Vec<String> = feed
+        let articles: Vec<(String, bool)> = feed
             .articles()
-            .map(|x| Self::fmt_article_title_in_list(config, x, max_title_len))
+            .map(|article| {
+                (
+                    Self::fmt_article_title_in_list(config, article, max_title_len),
+                    history.is_article_read(&feed.name, article),
+                )
+            })
             .collect();
-        ArticleList::new(articles.as_slice())
+        ArticleList::new(articles.as_slice(), selected_line)
     }
 
     /// Format article title in articles list

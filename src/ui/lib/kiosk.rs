@@ -100,6 +100,7 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             FeedState::Success(Feed {
+                name: String::from("lefigaro"),
                 articles: Vec::default(),
             }),
         );
@@ -112,6 +113,7 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             FeedState::Success(Feed {
+                name: String::from("lefigaro"),
                 articles: Vec::default(),
             }),
         );
@@ -138,6 +140,7 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             FeedState::Success(Feed {
+                name: String::from("lefigaro"),
                 articles: Vec::default(),
             }),
         );
@@ -150,6 +153,7 @@ mod test {
         kiosk.insert_feed(
             "lefigaro",
             FeedState::Success(Feed {
+                name: String::from("lefigaro"),
                 articles: Vec::default(),
             }),
         );

@@ -23,12 +23,14 @@ use crate::helpers::strings as str_helpers;
 /// Contains, for a feed source, the list of articles fetched from remote
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Feed {
+    pub name: String,
     pub(crate) articles: Vec<Article>,
 }
 
 /// identifies a single article in the feed
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Article {
+    pub id: String,
     pub title: Option<String>,
     pub authors: Vec<String>,
     pub summary: String,
@@ -41,15 +43,14 @@ impl Feed {
     pub fn articles(&self) -> Iter<'_, Article> {
         self.articles.iter()
     }
-}
 
-// -- converter
-
-impl From<RssFeed> for Feed {
-    fn from(feed: RssFeed) -> Self {
+    pub fn new(name: impl ToString, feed: RssFeed) -> Self {
         let mut articles: Vec<Article> = feed.entries.into_iter().map(Article::from).collect();
         articles.sort_by_key(|x| std::cmp::Reverse(x.date));
-        Self { articles }
+        Self {
+            name: name.to_string(),
+            articles,
+        }
     }
 }
 
@@ -57,6 +58,7 @@ impl From<RssEntry> for Article {
     fn from(entry: RssEntry) -> Self {
         let content_or_summary = content_or_summary(&entry);
         Self {
+            id: entry.id.clone(),
             title: entry
                 .title
                 .map(|x| str_helpers::strip_html(x.content.as_str())),
@@ -106,6 +108,7 @@ mod test {
     #[test]
     fn should_get_feed_attributes() {
         let feed = Feed {
+            name: String::from("pippo"),
             articles: Vec::default(),
         };
         assert!(feed.articles.is_empty());
@@ -144,7 +147,7 @@ mod test {
             ttl: None,
             entries: vec![RssEntry::default(), RssEntry::default()],
         };
-        let feed = Feed::from(feed);
+        let feed = Feed::new("pippo", feed);
         assert_eq!(feed.articles.len(), 2);
     }
 }

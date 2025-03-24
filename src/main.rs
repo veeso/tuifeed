@@ -77,9 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Configuration is empty".into());
     }
     // Run ui
-    Ui::init(config, args.ticks).run();
-
-    Ok(())
+    Ui::init(config, args.ticks)?.run()
 }
 
 /// Edit configuration file

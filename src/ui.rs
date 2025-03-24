@@ -8,7 +8,7 @@ mod view;
 
 use std::time::{Duration, Instant};
 
-use lib::{FeedClient, FeedState, FlatFeedState, Kiosk};
+use lib::{FeedClient, FeedState, FlatFeedState, History, Kiosk};
 use tuirealm::terminal::{CrosstermTerminalAdapter, TerminalBridge};
 use tuirealm::{
     Application, AttrValue, Attribute, NoUserEvent, PollStrategy, State, StateValue, Update,
@@ -60,6 +60,7 @@ pub struct Ui {
     application: Application<Id, Msg, NoUserEvent>,
     client: FeedClient,
     config: Config,
+    history: History,
     kiosk: Kiosk,
     last_redraw: Instant,
     redraw: bool,
@@ -68,27 +69,31 @@ pub struct Ui {
 
 impl Ui {
     /// Init a new [`Ui`] instance
-    pub fn init(config: Config, ticks: u64) -> Self {
-        let mut terminal = TerminalBridge::init_crossterm().expect("Could not initialize terminal");
+    pub fn init(config: Config, ticks: u64) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut terminal = TerminalBridge::init_crossterm()?;
         let _ = terminal.disable_mouse_capture();
+
+        let history_path = History::default_path()?;
+        let history = History::load(&history_path)?;
 
         let mut kiosk = Kiosk::default();
         for name in config.sources.keys() {
             kiosk.insert_feed(name, FeedState::Loading);
         }
-        Self {
+        Ok(Self {
             application: Self::init_application(&kiosk, Duration::from_millis(ticks)),
             client: FeedClient::default(),
             config,
+            history,
             kiosk,
             last_redraw: Instant::now(),
             redraw: true,
             terminal,
-        }
+        })
     }
 
     /// run the ui
-    pub fn run(mut self) {
+    pub fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         // Fetch sources once
         self.fetch_all_sources();
         let mut quit = false;
@@ -119,6 +124,11 @@ impl Ui {
                 self.view();
             }
         }
+
+        // save history
+        self.history.save()?;
+
+        Ok(())
     }
 
     /// Fetch all sources and update Ui
@@ -140,7 +150,11 @@ impl Ui {
         self.client.fetch(name, &source);
         // Mark source as Loading
         self.update_source(name, FeedState::Loading);
-        self.update_feed_list_item(name, FlatFeedState::Loading);
+        self.update_feed_list_item(
+            name,
+            FlatFeedState::Loading,
+            self.history.is_source_read(name),
+        );
         // Force redraw
         self.redraw = true;
     }
@@ -162,14 +176,32 @@ impl Ui {
                     FeedState::Error(err)
                 }
             };
+
+            // if feed is [`FeedState::Success`] update history
+            if let FeedState::Success(feed) = &state {
+                for article in feed.articles() {
+                    self.history.insert(&feed.name, article);
+                }
+            }
+
             // Update source
             let flat_state = FlatFeedState::from(&state);
             self.update_source(name.as_str(), state);
             // Update feed list and initialize article
-            self.update_feed_list_item(name.as_str(), flat_state);
+            self.update_feed_list_item(
+                name.as_str(),
+                flat_state,
+                self.history.is_source_read(&name),
+            );
             if self.is_article_list_empty() {
-                let config = self.config.clone();
-                self.init_article(&config);
+                let article_list = self.get_article_list(
+                    &self.config,
+                    self.get_selected_feed().unwrap(),
+                    &self.history,
+                    self.max_article_name_len(),
+                    None,
+                );
+                self.init_article(article_list);
             }
             // Force redraw
             self.redraw = true;
@@ -215,6 +247,40 @@ impl Ui {
             None
         }
     }
+
+    /// mark article as viewed in history
+    fn mark_viewed_article(&mut self, index: usize) {
+        let Some(feed_name) = self.get_selected_feed_name() else {
+            return;
+        };
+        let Some(feed) = self.get_selected_feed().cloned() else {
+            return;
+        };
+        let Some(article) = feed.articles().nth(index).cloned() else {
+            return;
+        };
+        let was_read = self.history.is_article_read(feed_name.as_str(), &article);
+        if !was_read {
+            self.history.read(feed_name.as_str(), &article);
+            // update view
+            self.reload_article_list(&feed, Some(index));
+        }
+    }
+
+    fn reload_article_list(&mut self, feed: &Feed, selected_line: Option<usize>) {
+        let articles = self.get_article_list(
+            &self.config,
+            feed,
+            &self.history,
+            self.max_article_name_len(),
+            selected_line,
+        );
+        assert!(
+            self.application
+                .remount(Id::ArticleList, Box::new(articles), vec![])
+                .is_ok()
+        );
+    }
 }
 
 impl Update<Msg> for Ui {
@@ -226,6 +292,7 @@ impl Update<Msg> for Ui {
             }
             Msg::ArticleChanged(article) => {
                 self.update_article(article);
+                self.mark_viewed_article(article);
                 None
             }
             Msg::ArticleListBlur => {
@@ -242,14 +309,8 @@ impl Update<Msg> for Ui {
             }
             Msg::FeedChanged(feed) => {
                 let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
-                if let Some(feed) = self.kiosk.get_feed(feed.as_str()) {
-                    let articles =
-                        self.get_article_list(&self.config, feed, self.max_article_name_len());
-                    assert!(
-                        self.application
-                            .remount(Id::ArticleList, Box::new(articles), vec![])
-                            .is_ok()
-                    );
+                if let Some(feed) = self.kiosk.get_feed(feed.as_str()).cloned() {
+                    self.reload_article_list(&feed, None);
                     // Then load the first article of feed
                     self.update_article(0);
                 }

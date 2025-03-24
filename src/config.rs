@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
+use crate::feed::FeedSource;
+
 /// tuifeed configuration
 #[derive(Deserialize, Clone, Debug, Default)]
 pub struct Config {
@@ -15,7 +17,7 @@ pub struct Config {
     #[serde(rename = "article-title")]
     pub article_title: Option<ArticleTitleConfig>,
     /// Association between source name and url
-    pub sources: HashMap<String, String>,
+    pub sources: HashMap<String, FeedSource>,
 }
 
 /// article title configuration

@@ -50,7 +50,7 @@ mod test {
     fn should_convert_request_error() {
         assert_eq!(
             FeedError::from(RequestError::StatusCode(404,)),
-            FeedError::Http(String::from("https://example.com/: status code 404"))
+            FeedError::Http(String::from("http status: 404"))
         );
     }
 

@@ -162,6 +162,7 @@ then you can add new sources as follows:
 "Il Post (Mondo)" = "https://www.ilpost.it/mondo/feed/"
 "Il Post (Italia)" = "https://www.ilpost.it/italia/feed/"
 "Messaggero Veneto" = "https://messaggeroveneto.gelocal.it/rss/finegil/messaggeroveneto/feed.rss"
+local = "file:///path/to/your/local/feed.xml"
 ```
 
 so for each feed you want to read from, you must put an entry with a key, which identifies the **Name** of the source as it'll be displayed in the UI associated to the URL of the feed.

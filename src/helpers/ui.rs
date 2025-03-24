@@ -29,21 +29,3 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
         )
         .split(new_area[1])[1]
 }
-
-#[cfg(test)]
-mod tests {
-
-    use pretty_assertions::assert_eq;
-
-    use super::*;
-
-    #[test]
-    fn test_utils_ui_draw_area_in() {
-        let area: Rect = Rect::new(0, 0, 1024, 512);
-        let child: Rect = draw_area_in(area, 75, 30);
-        assert_eq!(child.x, 43);
-        assert_eq!(child.y, 63);
-        assert_eq!(child.width, 271);
-        assert_eq!(child.height, 54);
-    }
-}

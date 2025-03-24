@@ -17,6 +17,7 @@
 Released on ??
 
 - fix: first article has width 1
+- [issue 11](https://github.com/veeso/tuifeed/issues/11): add support for local file. Specify local file with `file:///path/to/rss.xml` in the URL field
 
 ## 0.3.2
 

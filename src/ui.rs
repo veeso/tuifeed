@@ -15,7 +15,7 @@ use tuirealm::{
 };
 
 use crate::config::Config;
-use crate::feed::Feed;
+use crate::feed::{Feed, FeedSource};
 use crate::helpers::open as open_helpers;
 
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(50);
@@ -124,20 +124,20 @@ impl Ui {
     /// Fetch all sources and update Ui
     fn fetch_all_sources(&mut self) {
         // Fetch sources
-        let sources: Vec<(String, String)> = self
+        let sources: Vec<_> = self
             .config
             .sources
             .iter()
             .map(|(name, uri)| (name.clone(), uri.clone()))
             .collect();
-        for (name, uri) in sources.into_iter() {
-            self.fetch_source(name.as_str(), uri.as_str());
+        for (name, source) in sources.into_iter() {
+            self.fetch_source(name.as_str(), source);
         }
     }
 
     /// Start a worker to fetch sources
-    fn fetch_source(&mut self, name: &str, uri: &str) {
-        self.client.fetch(name, uri);
+    fn fetch_source(&mut self, name: &str, source: FeedSource) {
+        self.client.fetch(name, &source);
         // Mark source as Loading
         self.update_source(name, FeedState::Loading);
         self.update_feed_list_item(name, FlatFeedState::Loading);
@@ -263,7 +263,7 @@ impl Update<Msg> for Ui {
                 if let Some(name) = self.get_selected_feed_name() {
                     let uri = self.config.sources.get(&name).cloned();
                     if let Some(uri) = uri {
-                        self.fetch_source(name.as_str(), uri.as_str())
+                        self.fetch_source(name.as_str(), uri)
                     }
                 }
                 None

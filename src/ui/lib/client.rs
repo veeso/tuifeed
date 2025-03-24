@@ -5,7 +5,7 @@
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 
-use crate::feed::{Client, Feed, FeedResult};
+use crate::feed::{Client, Feed, FeedResult, FeedSource};
 
 #[derive(Debug, Default)]
 pub struct FeedClient {
@@ -15,8 +15,8 @@ pub struct FeedClient {
 
 impl FeedClient {
     /// Fetch source.
-    pub fn fetch(&mut self, name: &str, uri: &str) {
-        self.workers.push(WorkerThread::start(name, uri));
+    pub fn fetch(&mut self, name: &str, source: &FeedSource) {
+        self.workers.push(WorkerThread::start(name, source));
     }
 
     /// Poll worker threads
@@ -60,12 +60,12 @@ struct WorkerThread(Arc<RwLock<bool>>, JoinHandle<(String, FeedResult<Feed>)>);
 
 impl WorkerThread {
     /// Start a new worker thread
-    pub fn start(name: &str, uri: &str) -> Self {
+    pub fn start(name: &str, source: &FeedSource) -> Self {
         let completed = Arc::new(RwLock::new(false));
         let completed_t = Arc::clone(&completed);
         let name = name.to_string();
-        let uri = uri.to_string();
-        let thread = thread::spawn(|| Worker::new(completed_t, name, uri).run());
+        let source = source.clone();
+        let thread = thread::spawn(|| Worker::new(completed_t, name, source).run());
         Self(completed, thread)
     }
 
@@ -90,15 +90,15 @@ impl WorkerThread {
 pub struct Worker {
     completed: Arc<RwLock<bool>>,
     name: String,
-    uri: String,
+    source: FeedSource,
 }
 
 impl Worker {
-    pub fn new(completed: Arc<RwLock<bool>>, name: String, uri: String) -> Self {
+    pub fn new(completed: Arc<RwLock<bool>>, name: String, source: FeedSource) -> Self {
         Self {
             completed,
             name,
-            uri,
+            source,
         }
     }
 
@@ -107,7 +107,7 @@ impl Worker {
         // Set running to false
         self.stop();
         // Return to handle
-        (self.name.clone(), Client.fetch(self.uri.as_str()))
+        (self.name.clone(), Client.fetch(&self.source))
     }
 
     fn stop(&mut self) {
@@ -135,7 +135,10 @@ mod test {
         // Start worker
         client.fetch(
             "Le Figaro",
-            "https://www.lefigaro.fr/rss/figaro_actualites.xml",
+            &("https://www.lefigaro.fr/rss/figaro_actualites.xml"
+                .to_string()
+                .try_into()
+                .unwrap()),
         );
         assert_eq!(client.running(), true);
         // Wait up to 10 seconds before failing

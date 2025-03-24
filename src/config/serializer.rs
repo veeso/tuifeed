@@ -91,11 +91,11 @@ mod test {
         let config: Config = deserialize(Box::new(reader)).ok().unwrap();
         assert_eq!(config.sources.len(), 2);
         assert_eq!(
-            config.sources.get("nytimes").unwrap().as_str(),
+            config.sources.get("nytimes").unwrap().to_string(),
             "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
         );
         assert_eq!(
-            config.sources.get("lefigaro").unwrap().as_str(),
+            config.sources.get("lefigaro").unwrap().to_string(),
             "https://www.lefigaro.fr/rss/figaro_actualites.xml"
         );
         assert_eq!(config.article_title.as_ref().unwrap().show_author, true);
@@ -109,11 +109,11 @@ mod test {
         let config: Config = deserialize(Box::new(reader)).ok().unwrap();
         assert_eq!(config.sources.len(), 2);
         assert_eq!(
-            config.sources.get("nytimes").unwrap().as_str(),
+            config.sources.get("nytimes").unwrap().to_string(),
             "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
         );
         assert_eq!(
-            config.sources.get("lefigaro").unwrap().as_str(),
+            config.sources.get("lefigaro").unwrap().to_string(),
             "https://www.lefigaro.fr/rss/figaro_actualites.xml"
         );
         assert!(config.article_title.is_none());

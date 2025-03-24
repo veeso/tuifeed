@@ -6,16 +6,18 @@
 // -- modules
 mod client;
 mod result;
+mod source;
 
 use std::slice::Iter;
 
 // -- deps
 use chrono::{DateTime, Local};
 // -- export
-pub use client::Client;
 use feed_rs::model::{Entry as RssEntry, Feed as RssFeed};
-pub use result::{FeedError, FeedResult};
 
+pub use self::client::Client;
+pub use self::result::{FeedError, FeedResult};
+pub use self::source::FeedSource;
 use crate::helpers::strings as str_helpers;
 
 /// Contains, for a feed source, the list of articles fetched from remote

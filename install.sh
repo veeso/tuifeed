@@ -8,10 +8,12 @@
 #   -f, -y, --force, --yes
 #     Skip the confirmation prompt during installation
 
-TUIFEED_VERSION="0.3.2"
+TUIFEED_VERSION="0.4.0"
 GITHUB_URL="https://github.com/veeso/tuifeed/releases/download/v${TUIFEED_VERSION}"
-DEB_URL="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_amd64.deb"
-RPM_URL="${GITHUB_URL}/tuifeed-${TUIFEED_VERSION}-1.x86_64.rpm"
+DEB_URL_AMD64="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_amd64.deb"
+DEB_URL_AARCH64="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_arm64.deb"
+
+PATH="$PATH:/usr/sbin"
 
 set -eu
 printf "\n"
@@ -27,6 +29,13 @@ MAGENTA="$(tput setaf 5 2>/dev/null || printf '')"
 NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 
 # Functions
+
+set_tuifeed_version() {
+    TUIFEED_VERSION="$1"
+    GITHUB_URL="https://github.com/veeso/tuifeed/releases/download/v${TUIFEED_VERSION}"
+    DEB_URL_AMD64="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_amd64.deb"
+    DEB_URL_AARCH64="${GITHUB_URL}/tuifeed_${TUIFEED_VERSION}_arm64.deb"
+}
 
 info() {
     printf '%s\n' "${BOLD}${GREY}>${NO_COLOR} $*"
@@ -92,16 +101,20 @@ test_writeable() {
 }
 
 elevate_priv() {
-    if ! has sudo; then
-        error 'Could not find the command "sudo", needed to install tuifeed on your system.'
-        info "If you are on Windows, please run your shell as an administrator, then"
-        info "rerun this script. Otherwise, please run this script as root, or install"
-        info "sudo."
-        exit 1
-    fi
-    if ! sudo -v; then
+    if has sudo; then
+      if ! sudo -v; then
         error "Superuser not granted, aborting installation"
         exit 1
+      fi
+      sudo="sudo"
+    elif has doas; then
+      sudo="doas"
+    else
+      error 'Could not find the commands "sudo" or "doas", needed to install tuifeed on your system.'
+      info "If you are on Windows, please run your shell as an administrator, then"
+      info "rerun this script. Otherwise, please run this script as root, or install"
+      info "sudo or doas."
+      exit 1
     fi
 }
 
@@ -110,9 +123,7 @@ elevate_priv_ex() {
     if test_writeable "$check_dir"; then
         sudo=""
     else
-        warn "Root permissions are required to install dependecies"
         elevate_priv
-        sudo="sudo"
     fi
     echo $sudo
 }
@@ -153,11 +164,6 @@ detect_arch() {
         arch="arm"
     fi
     
-    if [ "${arch}" != "x86_64" ]; then
-        error "Unsupported arch ${arch}"
-        return 1
-    fi
-    
     printf '%s' "${arch}"
 }
 
@@ -182,30 +188,42 @@ confirm() {
 # Installers
 
 install_on_bsd() {
-    # Net BSD users
-    if has pkgin; then
-        info "Detected pkgin on your NetBSD system. Installing tuifeed with pkgin"
-        pkgin install tuifeed
-    else
-        info "There's no available package for your *BSD distro. Installing tuifeed with cargo..."
-        try_with_cargo "There's no suitable installation method for your operating system."
-    fi
+    try_with_cargo "packages for freeBSD are distribuited no more. Only cargo installations are supported." "freebsd"
 }
 
 install_on_arch_linux() {
     pkg="$1"
     info "Detected ${YELLOW}${pkg}${NO_COLOR} on your system"
-    confirm "${YELLOW}rust${NO_COLOR} is required to install ${GREEN}tuifeed${NO_COLOR}; would you like to proceed?"
-    $pkg -S rust
+    # check if rust is already installed
+    has cargo
+    CARGO=$?
+    if [ $CARGO -ne 0 ]; then
+        confirm "${YELLOW}rust${NO_COLOR} is required to install ${GREEN}tuifeed${NO_COLOR}; would you like to proceed?"
+        $pkg -S rust
+    fi
     info "Installing ${GREEN}tuifeed${NO_COLOR} AUR package…"
     $pkg -S tuifeed
+}
+
+install_with_brew() {
+    info "Installing tuifeed with brew"
+    if has tuifeed; then
+        info "Upgrading ${GREEN}tuifeed${NO_COLOR}…"
+        # The OR is used since someone could have installed via cargo previously
+        brew update && brew upgrade tuifeed || brew install veeso/tuifeed/tuifeed
+    else
+        info "Installing ${GREEN}tuifeed${NO_COLOR}…"
+        brew install veeso/tuifeed/tuifeed
+    fi
 }
 
 install_on_linux() {
     local msg
     local sudo
     local archive
-    if has yay; then
+    if has pacman; then
+        install_on_arch_linux pacman
+    elif has yay; then
         install_on_arch_linux yay
     elif has pakku; then
         install_on_arch_linux pakku
@@ -218,71 +236,79 @@ install_on_linux() {
     elif has pikaur; then
         install_on_arch_linux pikaur
     elif has dpkg; then
-        if [ "${ARCH}" != "x86_64" ]; then # It's okay on AUR; not on other distros
-            try_with_cargo "we don't distribute packages for ${ARCH} at the moment"
+        case "${ARCH}" in
+            x86_64) DEB_URL="$DEB_URL_AMD64" ;;
+            aarch64) DEB_URL="$DEB_URL_AARCH64" ;;
+            *) try_with_cargo "we don't distribute packages for ${ARCH} at the moment" && return $? ;;
+        esac
+        info "Detected dpkg on your system"
+        info "Installing ${GREEN}tuifeed${NO_COLOR} via Debian package"
+        archive=$(get_tmpfile "deb")
+        download "${archive}" "${DEB_URL}"
+        info "Downloaded debian package to ${archive}"
+        if test_writeable "/usr/bin"; then
+            sudo=""
+            msg="Installing ${GREEN}tuifeed${NO_COLOR}, please wait…"
         else
-            info "Detected dpkg on your system"
-            info "Installing ${GREEN}tuifeed${NO_COLOR} via Debian package"
-            archive=$(get_tmpfile "deb")
-            download "${archive}" "${DEB_URL}"
-            info "Downloaded debian package to ${archive}"
-            if test_writeable "/usr/bin"; then
-                sudo=""
-                msg="Installing ${GREEN}tuifeed${NO_COLOR}, please wait…"
-            else
-                warn "Root permissions are required to install ${GREEN}tuifeed${NO_COLOR}…"
-                elevate_priv
-                sudo="sudo"
-                msg="Installing ${GREEN}tuifeed${NO_COLOR} as root, please wait…"
-            fi
-            info "$msg"
-            $sudo dpkg -i "${archive}"
+            warn "Root permissions are required to install ${GREEN}tuifeed${NO_COLOR}…"
+            elevate_priv
+            sudo="sudo"
+            msg="Installing ${GREEN}tuifeed${NO_COLOR} as root, please wait…"
         fi
-    elif has rpm; then
-        if [ "${ARCH}" != "x86_64" ]; then # It's okay on AUR; not on other distros
-            try_with_cargo "we don't distribute packages for ${ARCH} at the moment"
-        else
-            info "Detected rpm on your system"
-            info "Installing ${GREEN}tuifeed${NO_COLOR} via RPM package"
-            archive=$(get_tmpfile "rpm")
-            download "${archive}" "${RPM_URL}"
-            info "Downloaded rpm package to ${archive}"
-            if test_writeable "/usr/bin"; then
-                sudo=""
-                msg="Installing ${GREEN}tuifeed${NO_COLOR}, please wait…"
-            else
-                warn "Root permissions are required to install ${GREEN}tuifeed${NO_COLOR}…"
-                elevate_priv
-                sudo="sudo"
-                msg="Installing ${GREEN}tuifeed${NO_COLOR} as root, please wait…"
-            fi
-            info "$msg"
-            $sudo rpm -U "${archive}"
-        fi
+        info "$msg"
+        $sudo dpkg -i "${archive}"
+        rm -f ${archive}
+    elif has brew; then
+        install_with_brew
     else
-        try_with_cargo "No suitable installation method found for your Linux distribution; if you're running on Arch linux, please install an AUR package manager (such as yay). Currently only Arch, Debian based and Red Hat based distros are supported"
+        try_with_cargo "No suitable installation method found for your Linux distribution; if you're running on Arch linux, please install an AUR package manager (such as yay). Currently only Arch, Debian based and Red Hat based distros are supported" "linux"
     fi
 }
 
 install_on_macos() {
     if has brew; then
-        # get homebrew formula name
-        if [ "${ARCH}" == "x86_64" ]; then
-            FORMULA="tuifeed"
-        else
-            FORMULA="tuifeed-m1"
-        fi
-        if has tuifeed; then
-            info "Upgrading ${GREEN}tuifeed${NO_COLOR}…"
-            # The OR is used since someone could have installed via cargo previously
-            brew update && brew upgrade ${FORMULA} || brew install veeso/tuifeed/${FORMULA}
-        else
-            info "Installing ${GREEN}tuifeed${NO_COLOR}…"
-            brew install veeso/tuifeed/${FORMULA}
-        fi
+        install_with_brew
     else
-        try_with_cargo "brew is missing on your system; please install it from <https://brew.sh/>"
+        try_with_cargo "brew is missing on your system; please install it from <https://brew.sh/>" "macos"
     fi
+}
+
+# -- cargo installation
+
+install_bsd_cargo_deps() {
+    set -e
+    confirm "${YELLOW}libssh, gcc${NO_COLOR} are required to install ${GREEN}tuifeed${NO_COLOR}; would you like to proceed?"
+    sudo="$(elevate_priv_ex /usr/local/bin)"
+    $sudo pkg install -y curl wget libssh gcc dbus pkgconf libsmbclient
+    info "Dependencies installed successfully"
+}
+
+install_linux_cargo_deps() {
+    local debian_deps="gcc pkg-config"
+    local rpm_deps="gcc openssl pkgconfig"
+    local arch_deps="gcc openssl pkg-config"
+    local deps_cmd=""
+    # Get pkg manager
+    if has apt; then
+        deps_cmd="apt install -y $debian_deps"
+    elif has apt-get; then
+        deps_cmd="apt-get install -y $debian_deps"
+    elif has yum; then
+        deps_cmd="yum -y install $rpm_deps"
+    elif has dnf; then
+        deps_cmd="dnf -y install $rpm_deps"
+    elif has pacman; then
+        deps_cmd="pacman -S --noconfirm $arch_deps"
+    else
+        error "Could not find any suitable package manager for your linux distro 🙄"
+        error "Supported package manager are: 'apt', 'apt-get', 'yum', 'dnf', 'pacman'"
+        exit 1
+    fi
+    set -e
+    confirm "${YELLOW}libssh, gcc, openssl, pkg-config, libdbus${NO_COLOR} are required to install ${GREEN}tuifeed${NO_COLOR}. The following command will be used to install the dependencies: '${BOLD}${YELLOW}${deps_cmd}${NO_COLOR}'. Would you like to proceed?"
+    sudo="$(elevate_priv_ex /usr/local/bin)"
+    $sudo $deps_cmd
+    info "Dependencies installed successfully"
 }
 
 install_cargo() {
@@ -305,6 +331,7 @@ install_cargo() {
         download "${rustup}" "https://sh.rustup.rs"
         chmod +x $rustup
         $rustup -y
+        rm -f ${archive}
         info "Rust installed with success"
         . $cargo_env
     fi
@@ -313,11 +340,27 @@ install_cargo() {
 
 try_with_cargo() {
     err="$1"
+    platform="$2"
     # Install cargo
     install_cargo
     if has cargo; then
         info "Installing ${GREEN}tuifeed${NO_COLOR} via Cargo…"
-        cargo install --locked tuifeed
+        case $platform in
+            "freebsd")
+                install_bsd_cargo_deps
+                cargo install --locked --no-default-features tuifeed
+            ;;
+
+            "linux")
+                install_linux_cargo_deps
+                cargo install --locked tuifeed
+            ;;
+
+            *)
+                cargo install --locked tuifeed
+            ;;
+
+        esac
     else
         error "$err"
         error "Alternatively you can opt for installing Cargo <https://www.rust-lang.org/tools/install>"
@@ -339,11 +382,12 @@ if [ -z "${ARCH-}" ]; then
 fi
 
 if [ -z "${BASE_URL-}" ]; then
-    BASE_URL="https://github.com/starship/starship/releases"
+    BASE_URL="https://github.com/veeso/tuifeed/releases"
 fi
 
 # parse argv variables
 while [ "$#" -gt 0 ]; do
+    echo $1
     case "$1" in
         
         -V | --verbose)
@@ -362,7 +406,10 @@ while [ "$#" -gt 0 ]; do
             FORCE="${1#*=}"
             shift 1
         ;;
-        
+        -v=* | --version=*)
+            set_tuifeed_version "${1#*=}"
+            shift 1
+        ;;
         *)
             error "Unknown option: $1"
             exit 1
@@ -370,7 +417,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-printf "  %s\n" "${UNDERLINE}tuifeed configuration${NO_COLOR}"
+printf "  %s\n" "${UNDERLINE}Termscp configuration${NO_COLOR}"
 info "${BOLD}Platform${NO_COLOR}:      ${GREEN}${PLATFORM}${NO_COLOR}"
 info "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
 
@@ -404,11 +451,9 @@ case $PLATFORM in
 esac
 
 completed "Congratulations! tuifeed has successfully been installed on your system!"
-info "If you're a new user, you need to configure tuifeed first. To configure tuifeed run 'tuifeed -c'"
-info "While if you've just updated your tuifeed version, you can find the changelog at this link <https://veeso.github.io/tuifeed/#changelog>"
 info "Remember that if you encounter any issue, you can report them on Github <https://github.com/veeso/tuifeed/issues/new>"
 info "Feel free to open an issue also if you have an idea which could improve the project"
-info "If you want to support the project, please, consider a little donation <https://www.buymeacoffee.com/veeso>"
+info "If you want to support the project, please, consider a little donation <https://ko-fi.com/veeso>"
 info "I hope you'll enjoy using tuifeed :D"
 
 exit 0

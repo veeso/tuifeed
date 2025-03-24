@@ -1,13 +1,13 @@
 # tuifeed
 
 <p align="center">
-  <img src="/docs/images/tuifeed.svg" width="256" height="256" />
+  <img src="/docs/images/tuifeed.svg" width="256" height="256" alt="logo" />
 </p>
 
 <p align="center">~ A terminal news feed reader with a fancy ui ~</p>
 
-<p align="center">Developed by <a href="https://veeso.github.io/" target="_blank">@veeso</a></p>
-<p align="center">Current version: 0.3.2 (30/08/2022)</p>
+<p align="center">Developed by <a href="https://veeso.me/" target="_blank">@veeso</a></p>
+<p align="center">Current version: 0.4.0 (24/03/2025)</p>
 
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"
@@ -17,7 +17,7 @@
   /></a>
   <a href="https://github.com/veeso/tuifeed/stargazers"
     ><img
-      src="https://img.shields.io/github/stars/veeso/tuifeed.svg"
+      src="https://img.shields.io/github/stars/veeso/tuifeed.svg?style=badge&logo=github"
       alt="Repo stars"
   /></a>
   <a href="https://crates.io/crates/tuifeed"
@@ -52,11 +52,6 @@
       src="https://github.com/veeso/tuifeed/workflows/Windows/badge.svg"
       alt="Windows"
   /></a>
-  <a href="https://coveralls.io/github/veeso/tuifeed"
-    ><img
-      src="https://coveralls.io/repos/github/veeso/tuifeed/badge.svg"
-      alt="Coveralls"
-  /></a>
 </p>
 
 ---
@@ -67,6 +62,7 @@
   - [Get started 🏁](#get-started-)
     - [Installation 🚀](#installation-)
       - [Shell script 🖥️](#shell-script-️)
+      - [FreeBSD users](#freebsd-users)
       - [Windows users 🍫](#windows-users-)
       - [Cargo installation 📦](#cargo-installation-)
     - [Configure your news feed](#configure-your-news-feed)
@@ -114,7 +110,6 @@ curl --proto '=https' --tlsv1.2 -sSLf "https://git.io/J1O0Z" | sh
 
 > 🔴 If you don't trust the script, you can view its content [on Github](https://github.com/veeso/tuifeed/blob/main/install.sh)
 
-
 #### FreeBSD users
 
 Install via pkg:
@@ -122,7 +117,6 @@ Install via pkg:
 ```sh
 pkg install tuifeed
 ```
-
 
 #### Windows users 🍫
 
@@ -249,8 +243,8 @@ You can make a donation with one of these platforms:
 
 - [crossterm](https://github.com/crossterm-rs/crossterm)
 - [feed-rs](https://github.com/feed-rs/feed-rs)
+- [ratatui](https://github.com/ratatui/ratatui)
 - [tui-realm](https://github.com/veeso/tui-realm)
-- [tui-rs](https://github.com/fdehau/tui-rs)
 - [ureq](https://github.com/algesten/ureq)
 
 ---

@@ -1,0 +1,52 @@
+name: "Build artifacts"
+
+on:
+  workflow_dispatch:
+
+env:
+  TUIFEED_VERSION: "0.4.0"
+
+jobs:
+  build-binaries:
+    name: Build - ${{ matrix.platform.release_for }}
+    strategy:
+      matrix:
+        platform:
+          - release_for: MacOS-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+
+          - release_for: MacOS-M1
+            os: macos-latest
+            target: aarch64-apple-darwin
+
+          - release_for: Linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - release_for: Linux-ARM
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.platform.target }}
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.platform.target }}
+      - name: Prepare artifact files
+        run: |
+          mkdir -p .artifact
+          mv target/${{ matrix.platform.target }}/release/tuifeed .artifact/tuifeed
+          tar -czf .artifact/tuifeed-v${{ env.TUIFEED_VERSION }}-${{ matrix.platform.target }}.tar.gz -C .artifact tuifeed
+          ls -l .artifact/
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          retention-days: 1
+          name: tuifeed-${{ matrix.platform.target }}
+          path: .artifact/tuifeed-v${{ env.TUIFEED_VERSION }}-${{ matrix.platform.target }}.tar.gz

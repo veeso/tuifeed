@@ -9,7 +9,6 @@ extern crate lazy_static;
 
 use std::env;
 use std::path::PathBuf;
-use std::process::exit;
 
 use argh::FromArgs;
 
@@ -42,7 +41,7 @@ struct Args {
     version: bool,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = argh::from_env();
     // Print version
     if args.version {
@@ -50,15 +49,15 @@ fn main() {
             "tuifeed - {} - Developed by {}",
             TUIFEED_VERSION, TUIFEED_AUTHORS
         );
-        exit(255);
+        return Ok(());
     }
     // Open config file
     if args.config {
         if let Err(e) = edit_config_file() {
             eprintln!("{}", e);
-            exit(255)
+            return Err(e.into());
         } else {
-            exit(0)
+            return Ok(());
         }
     }
     // Get configuration
@@ -69,16 +68,18 @@ fn main() {
             eprintln!(
                 "If necessary, you can run tuifeed with `-c` option to edit and eventually fix your configuration file"
             );
-            exit(255);
+            return Err(e.into());
         }
     };
     // Check if configured
     if config.sources.is_empty() {
         eprintln!("tuifeed must be configured first. Run `tuifeed -c`");
-        exit(255);
+        return Err("Configuration not found".into());
     }
     // Run ui
     Ui::init(config, args.ticks).run();
+
+    Ok(())
 }
 
 /// Edit configuration file

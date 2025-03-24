@@ -37,6 +37,9 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.platform.target }}
+      - name: install arm toolchain
+        if: matrix.platform.os == 'ubuntu-latest' && matrix.platform.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get install -y gcc-aarch64-linux-gnu
       - name: Build release
         run: cargo build --release --target ${{ matrix.platform.target }}
       - name: Prepare artifact files

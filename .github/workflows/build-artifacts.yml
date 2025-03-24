@@ -56,7 +56,7 @@ jobs:
         run: |
           cargo install cargo-deb
           cargo deb --target ${{ matrix.platform.target }}
-          cp target/debian/*.deb .artifact/tuifeed_${{ env.TUIFEED_VERSION }}_${{ matrix.platform.deb }}.deb
+          cp target/${{ matrix.platform.target }}/debian/*.deb .artifact/tuifeed_${{ env.TUIFEED_VERSION }}_${{ matrix.platform.deb }}.deb
       - name: "Upload artifact"
         uses: actions/upload-artifact@v4
         with:

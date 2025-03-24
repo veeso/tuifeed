@@ -193,10 +193,11 @@ impl Ui {
                 flat_state,
                 self.history.is_source_read(&name),
             );
-            if self.is_article_list_empty() {
+            let selected_feed = self.get_selected_feed();
+            if self.is_article_list_empty() && selected_feed.is_some() {
                 let article_list = self.get_article_list(
                     &self.config,
-                    self.get_selected_feed().unwrap(),
+                    selected_feed.expect("selected feed cannot be none"),
                     &self.history,
                     self.max_article_name_len(),
                     None,
@@ -230,22 +231,18 @@ impl Ui {
 
     /// Get currently selected feed
     fn get_selected_feed(&self) -> Option<&Feed> {
-        if let Some(feed) = self.get_selected_feed_name() {
-            Some(self.kiosk.get_feed(feed.as_str()).unwrap())
-        } else {
-            None
-        }
+        let feed = self.get_selected_feed_name()?;
+        self.kiosk.get_feed(feed.as_str())
     }
 
     /// Get currently selected feed name
     fn get_selected_feed_name(&self) -> Option<String> {
-        if let State::One(StateValue::Usize(feed)) =
-            self.application.state(&Id::FeedList).ok().unwrap()
-        {
-            Some((*self.sorted_sources().get(feed).unwrap()).clone())
-        } else {
-            None
-        }
+        let State::One(StateValue::Usize(feed)) = self.application.state(&Id::FeedList).ok()?
+        else {
+            return None;
+        };
+
+        self.sorted_sources().get(feed).cloned().cloned()
     }
 
     /// mark article as viewed in history
@@ -308,12 +305,12 @@ impl Update<Msg> for Ui {
                 None
             }
             Msg::FeedChanged(feed) => {
-                let feed = &(*self.sorted_sources().get(feed).unwrap()).clone();
-                if let Some(feed) = self.kiosk.get_feed(feed.as_str()).cloned() {
-                    self.reload_article_list(&feed, None);
-                    // Then load the first article of feed
-                    self.update_article(0);
-                }
+                let feed = self.sorted_sources().get(feed).cloned()?;
+                let feed = self.kiosk.get_feed(feed.as_str()).cloned()?;
+                self.reload_article_list(&feed, None);
+                // Then load the first article of feed
+                self.update_article(0);
+
                 None
             }
             Msg::FeedListBlur => {

@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.1](#041)
   - [0.4.0](#040)
   - [0.3.2](#032)
   - [0.3.1 (yanked)](#031-yanked)
@@ -11,6 +12,12 @@
   - [0.1.0](#010)
 
 ---
+
+## 0.4.1
+
+Released on 24/03/2025
+
+- fixed a panic occurring on release versions due to ugly unwrap
 
 ## 0.4.0
 

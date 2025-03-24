@@ -14,7 +14,7 @@
 
 ## 0.4.0
 
-Released on ??
+Released on 24/03/2025
 
 - [issue 4](https://github.com/veeso/tuifeed/issues/4): highlight new articles
 - [issue 14](https://github.com/veeso/tuifeed/issues/14) fix: create config dir at first run

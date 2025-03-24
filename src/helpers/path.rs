@@ -39,9 +39,7 @@ pub fn init_config_dir() -> Result<Option<PathBuf>, String> {
 /// Returns path for config file.
 /// If the file doesn't exist, it will initialize it
 pub fn get_config_file(config_dir: &Path) -> Result<PathBuf, String> {
-    // Prepare paths
-    let mut cfg_file: PathBuf = PathBuf::from(config_dir);
-    cfg_file.push("config.toml");
+    let cfg_file = config_dir.join("config.toml");
     // Check if exists
     if !cfg_file.exists() {
         init_config_file(cfg_file.as_path())?

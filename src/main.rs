@@ -26,7 +26,7 @@ use ui::Ui;
 #[derive(FromArgs)]
 #[argh(description = "
 Please, report issues to <https://github.com/veeso/tuifeed>
-Please, consider supporting the author <https://www.buymeacoffee.com/veeso>")]
+Please, consider supporting the author <https://ko-fi.com/veeso>")]
 struct Args {
     #[argh(switch, short = 'c', description = "open tuifeed configuration")]
     config: bool,
@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check if configured
     if config.sources.is_empty() {
         eprintln!("tuifeed must be configured first. Run `tuifeed -c`");
-        return Err("Configuration not found".into());
+        return Err("Configuration is empty".into());
     }
     // Run ui
     Ui::init(config, args.ticks).run();
@@ -84,25 +84,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Edit configuration file
 fn edit_config_file() -> Result<(), String> {
-    if let Some(p) = get_config_file() {
-        if let Err(e) = open_helpers::open_text_file(p.as_path()) {
-            eprintln!();
-            Err(format!("Could not open configuration file: {}", e))
-        } else {
-            Ok(())
-        }
+    let Some(p) = get_config_file() else {
+        return Err("Could not find a configuration path on your operating system...".to_string());
+    };
+
+    if let Err(e) = open_helpers::open_text_file(p.as_path()) {
+        eprintln!();
+        Err(format!("Could not open configuration file: {}", e))
     } else {
-        Err("Could not find a configuration path on your operating system...".to_string())
+        Ok(())
     }
 }
 
 /// Initialize configuration
 fn init_config() -> Result<Config, String> {
     let config_dir = path_helpers::init_config_dir()?;
-    if config_dir.is_none() {
+    let Some(config_dir) = config_dir else {
         return Ok(Config::default());
+    };
+
+    // if config dir doesn't exist create it
+    if !config_dir.exists() {
+        std::fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
     }
-    let config_file = path_helpers::get_config_file(config_dir.unwrap().as_path())?;
+
+    let config_file = path_helpers::get_config_file(&config_dir)?;
     // Parse configuration
     let config_file =
         file_helpers::open_file_read(config_file.as_path()).map_err(|e| e.to_string())?;
@@ -111,12 +117,7 @@ fn init_config() -> Result<Config, String> {
 
 /// Get configuration file path
 fn get_config_file() -> Option<PathBuf> {
-    let config_dir = match path_helpers::init_config_dir() {
-        Ok(Some(p)) => p,
-        _ => return None,
-    };
-    match path_helpers::get_config_file(config_dir.as_path()) {
-        Ok(p) => Some(p),
-        _ => None,
-    }
+    let config_dir = path_helpers::init_config_dir().ok()??;
+
+    path_helpers::get_config_file(config_dir.as_path()).ok()
 }

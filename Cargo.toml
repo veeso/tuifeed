@@ -1,10 +1,10 @@
 [package]
-authors = ["Christian Visintin <christian.visintin1997@gmail.com>"]
+authors = ["Christian Visintin <christian.visintin@veeso.dev>"]
 categories = ["command-line-utilities"]
 description = "A terminal feed reader with a fancy ui"
 documentation = "https://docs.rs/tuifeed"
 edition = "2024"
-homepage = "https://veeso.github.io/tuifeed/"
+homepage = "https://github.com/veeso/tuifeed"
 include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 keywords = ["rss", "feed", "feed-reader", "command-line-utility"]
 license = "MIT"

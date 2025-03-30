@@ -179,7 +179,10 @@ impl Ui {
 
             // if feed is [`FeedState::Success`] update history
             if let FeedState::Success(feed) = &state {
-                for article in feed.articles() {
+                // filter articlesd
+                let articles: Vec<_> = feed.articles().collect();
+                self.history.filter_articles(name.as_str(), &articles);
+                for article in articles {
                     self.history.insert(&feed.name, article);
                 }
             }

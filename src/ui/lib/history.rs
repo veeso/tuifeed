@@ -72,6 +72,22 @@ impl History {
         Ok(path.join("history.json"))
     }
 
+    /// Remove all articles from the history of a source, if not in the provided
+    /// [`Article`]s list.
+    pub fn filter_articles(&mut self, source: &str, articles: &[&Article]) {
+        let source = self
+            .sources
+            .entry(source.to_string())
+            .or_insert_with(|| SourceHistory {
+                feed: HashMap::new(),
+            });
+
+        // remove all articles not in the provided list
+        source
+            .feed
+            .retain(|article_id, _| articles.iter().any(|a| &a.id == article_id));
+    }
+
     /// Insert an article into the history
     pub fn insert(&mut self, source: &str, article: &Article) {
         let source = self
@@ -238,5 +254,56 @@ mod test {
         assert!(!history.is_article_read(&source, &article));
 
         history.save().expect("save history");
+    }
+
+    #[test]
+    fn test_should_filter_articles() {
+        let temp = NamedTempFile::new().unwrap();
+        let path = temp.path();
+
+        let mut history = History::load(path).expect("load history");
+        assert!(history.sources.is_empty());
+
+        let source = "figaro".to_string();
+        let article = Article {
+            id: "1".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        let article2 = Article {
+            id: "2".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        history.insert(&source, &article);
+        history.insert(&source, &article2);
+
+        // filter articles
+        history.filter_articles(&source, &[&article]);
+        assert!(history.sources.get(&source).is_some());
+        assert!(
+            history
+                .sources
+                .get(&source)
+                .unwrap()
+                .feed
+                .contains_key(&article.id)
+        );
+        assert!(
+            !history
+                .sources
+                .get(&source)
+                .unwrap()
+                .feed
+                .contains_key(&article2.id)
+        );
     }
 }

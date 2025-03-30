@@ -18,6 +18,7 @@
 
 Released on 30/03/2025
 
+- [issue 16](https://github.com/veeso/tuifeed/issues/16): filter out old articles from the history.
 - [issue 18](https://github.com/veeso/tuifeed/issues/18): first article is not marked as read when first loaded. Also mark source as read if all articles are read
 
 ## 0.4.1

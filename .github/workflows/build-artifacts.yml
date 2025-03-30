@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  TUIFEED_VERSION: "0.4.1"
+  TUIFEED_VERSION: "0.4.2"
 
 jobs:
   build-binaries:

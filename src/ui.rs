@@ -262,6 +262,10 @@ impl Ui {
             // update view
             self.reload_article_list(&feed, Some(index));
         }
+        // if the entire source is read, reload source list
+        if self.history.is_source_read(&feed_name) {
+            self.update_feed_list_item(&feed_name, FlatFeedState::Success, true);
+        }
     }
 
     fn reload_article_list(&mut self, feed: &Feed, selected_line: Option<usize>) {
@@ -307,6 +311,9 @@ impl Update<Msg> for Ui {
             Msg::FeedChanged(feed) => {
                 let feed = self.sorted_sources().get(feed).cloned()?;
                 let feed = self.kiosk.get_feed(feed.as_str()).cloned()?;
+                // mark first article as read
+                self.mark_viewed_article(0);
+                // Update feed list item
                 self.reload_article_list(&feed, None);
                 // Then load the first article of feed
                 self.update_article(0);

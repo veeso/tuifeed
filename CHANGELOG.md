@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.2](#042)
   - [0.4.1](#041)
   - [0.4.0](#040)
   - [0.3.2](#032)
@@ -12,6 +13,12 @@
   - [0.1.0](#010)
 
 ---
+
+## 0.4.2
+
+Released on 30/03/2025
+
+- [issue 18](https://github.com/veeso/tuifeed/issues/18): first article is not marked as read when first loaded. Also mark source as read if all articles are read
 
 ## 0.4.1
 

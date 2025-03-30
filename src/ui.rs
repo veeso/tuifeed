@@ -47,6 +47,8 @@ pub enum Msg {
     FeedListBlur,
     FetchAllSources,
     FetchSource,
+    MarkSourceAsRead,
+    MarkAllSourcesAsRead,
     GoReadArticle,
     OpenArticle,
     Quit,
@@ -267,7 +269,53 @@ impl Ui {
         }
         // if the entire source is read, reload source list
         if self.history.is_source_read(&feed_name) {
-            self.update_feed_list_item(&feed_name, FlatFeedState::Success, true);
+            let state = self
+                .kiosk
+                .get_feed_state(&feed_name)
+                .map(FlatFeedState::from)
+                .unwrap_or(FlatFeedState::Success);
+            self.update_feed_list_item(&feed_name, state, true);
+        }
+    }
+
+    /// Mark a source as read
+    fn mark_source_as_read(&mut self, name: &str) {
+        self.history.read_source(name);
+        let selected_line = self.application.state(&Id::FeedList).ok();
+        let selected_line = match selected_line {
+            Some(State::One(StateValue::Usize(line))) => Some(line),
+            _ => None,
+        };
+        let Some(feed) = self.get_selected_feed().cloned() else {
+            return;
+        };
+        self.reload_article_list(&feed, selected_line);
+
+        let state = self
+            .kiosk
+            .get_feed_state(name)
+            .map(FlatFeedState::from)
+            .unwrap_or(FlatFeedState::Success);
+        self.update_feed_list_item(&feed.name, state, true);
+    }
+
+    /// Mark all sources as read
+    fn mark_all_sources_as_read(&mut self) {
+        self.history.read_all();
+
+        let selected_line = self.application.state(&Id::FeedList).ok();
+        let selected_line = match selected_line {
+            Some(State::One(StateValue::Usize(line))) => Some(line),
+            _ => None,
+        };
+        let Some(feed) = self.get_selected_feed().cloned() else {
+            return;
+        };
+        self.reload_article_list(&feed, selected_line);
+
+        let sources_with_states = self.kiosk.get_state();
+        for (feed_name, state) in sources_with_states {
+            self.update_feed_list_item(&feed_name, state, true);
         }
     }
 
@@ -342,6 +390,16 @@ impl Update<Msg> for Ui {
             }
             Msg::GoReadArticle => {
                 let _ = self.application.active(&Id::ArticleSummary);
+                None
+            }
+            Msg::MarkAllSourcesAsRead => {
+                self.mark_all_sources_as_read();
+                None
+            }
+            Msg::MarkSourceAsRead => {
+                if let Some(name) = self.get_selected_feed_name() {
+                    self.mark_source_as_read(name.as_str());
+                }
                 None
             }
             Msg::OpenArticle => {

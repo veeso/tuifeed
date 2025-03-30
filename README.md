@@ -209,6 +209,8 @@ Once you're done with configuration, save, close and enjoy tuifeed 😄
 | Home, End                        | Feed list, article list         | Go to the beginning/end of the list                 |
 | R                                | Feed list                       | Reload selected source                              |
 | CTRL+R                           | Feed list                       | Reload all sources                                  |
+| V                                | Feed list                       | Mark selected source as read                        |
+| CTRL+V                           | Feed list                       | Mark all sources as read                            |
 | Tab, Left                        | Article list                    | Move to feed list                                   |
 | Right                            | Article list                    | Move to article summary                             |
 | Left                             | Article summary                 | Move to article list                                |

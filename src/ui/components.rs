@@ -32,6 +32,14 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Char('r'),
                 ..
             }) => Some(Msg::FetchSource),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('v'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Msg::MarkAllSourcesAsRead),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('v'),
+                ..
+            }) => Some(Msg::MarkSourceAsRead),
             _ => None,
         }
     }

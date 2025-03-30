@@ -137,6 +137,32 @@ impl History {
             .last_viewed = Some(now());
     }
 
+    /// set all articles from a source as read
+    pub fn read_source(&mut self, source: &str) {
+        // get entry
+        let source = self
+            .sources
+            .entry(source.to_string())
+            .or_insert_with(|| SourceHistory {
+                feed: HashMap::new(),
+            });
+
+        // update all articles
+        for article in source.feed.values_mut() {
+            article.last_viewed = Some(now());
+        }
+    }
+
+    /// set all articles as read
+    pub fn read_all(&mut self) {
+        // update all articles
+        for source in self.sources.values_mut() {
+            for article in source.feed.values_mut() {
+                article.last_viewed = Some(now());
+            }
+        }
+    }
+
     /// Returns whether the article has been read
     pub fn is_article_read(&self, source: &str, article: &Article) -> bool {
         self.sources
@@ -305,5 +331,85 @@ mod test {
                 .feed
                 .contains_key(&article2.id)
         );
+    }
+
+    #[test]
+    fn test_should_mark_source_as_read() {
+        let temp = NamedTempFile::new().unwrap();
+        let path = temp.path();
+
+        let mut history = History::load(path).expect("load history");
+        assert!(history.sources.is_empty());
+
+        let source = "figaro".to_string();
+        let article = Article {
+            id: "1".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        history.insert(&source, &article);
+        assert!(!history.is_source_read(&source));
+
+        let source2 = "lemonde".to_string();
+        let article = Article {
+            id: "1".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        history.insert(&source2, &article);
+        assert!(!history.is_source_read(&source2));
+
+        history.read_source(&source);
+        assert!(history.is_source_read(&source));
+        assert!(!history.is_source_read(&source2));
+        assert!(history.is_article_read(&source, &article));
+    }
+
+    #[test]
+    fn test_should_read_all_sources() {
+        let temp = NamedTempFile::new().unwrap();
+        let path = temp.path();
+
+        let mut history = History::load(path).expect("load history");
+        assert!(history.sources.is_empty());
+
+        let source = "figaro".to_string();
+        let article = Article {
+            id: "1".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        history.insert(&source, &article);
+        assert!(!history.is_source_read(&source));
+
+        let source2 = "lemonde".to_string();
+        let article = Article {
+            id: "1".to_string(),
+            title: Some("title".to_string()),
+            authors: vec![],
+            date: None,
+            summary: String::default(),
+            url: "http://example.com".to_string(),
+        };
+
+        history.insert(&source2, &article);
+        assert!(!history.is_source_read(&source2));
+
+        history.read_all();
+        assert!(history.is_source_read(&source));
+        assert!(history.is_source_read(&source2));
+        assert!(history.is_article_read(&source, &article));
     }
 }

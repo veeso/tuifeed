@@ -356,6 +356,20 @@ impl Ui {
                 }),
                 SubClause::Always,
             ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('v'),
+                    modifiers: KeyModifiers::CONTROL,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('v'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
         ]
     }
 
